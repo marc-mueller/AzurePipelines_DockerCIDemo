@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  devfun.api:
+    image: ${DOCKER_REGISTRY}devfunapi
+    build:
+      context: .
+      dockerfile: DevFun.Api/Dockerfile

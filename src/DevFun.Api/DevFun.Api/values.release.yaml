@@ -1,0 +1,15 @@
+replicaCount: __ReplicaCount__
+image:
+  repository: __ImageName__
+  tag: __Build.BuildNumber__
+
+ingress:
+  hosts:
+    - __IngressHostName__
+  tls:
+    - secretName: __TlsSecretName__
+      hosts:
+        - __IngressHostName__
+
+applicationInsights:
+  InstrumentationKey: __InstrumentationKey__

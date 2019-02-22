@@ -1,0 +1,15 @@
+FROM microsoft/dotnet:2.2.104-sdk
+ARG BUILD_CONFIGURATION=Debug
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
+EXPOSE 80
+
+WORKDIR /src
+COPY ["DevFun.Web/DevFun.Web.csproj", "DevFun.Web/"]
+
+RUN dotnet restore "DevFun.Web/DevFun.Web.csproj"
+COPY . .
+WORKDIR "/src/DevFun.Web"
+RUN dotnet build --no-restore "DevFun.Web.csproj" -c $BUILD_CONFIGURATION
+
+ENTRYPOINT ["dotnet", "run", "--no-build", "--no-launch-profile", "-c", "$BUILD_CONFIGURATION", "--"]
