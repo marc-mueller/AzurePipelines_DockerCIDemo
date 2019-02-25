@@ -39,7 +39,7 @@ namespace DevFun.Web
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             services.AddSingleton<IConfiguration>(Configuration);
-            services.AddSingleton<DevFunOptions>(new DevFunOptions() { ApiUrl = Configuration["DevFunOptions:Url"], DeploymentEnvironment = Configuration["DevFunOptions:DeploymentEnvironment"] });
+            services.AddSingleton<DevFunOptions>(new DevFunOptions() { ApiUrl = Configuration["DevFunOptions:Url"], DeploymentEnvironment = Configuration["DevFunOptions:DeploymentEnvironment"], AlternateTestingUrl = Configuration["DevFunOptions:AlternateTestingUrl"], FlagEnableAlternateUrl = bool.Parse(Configuration["DevFunOptions:FlagEnableAlternateUrl"]) });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

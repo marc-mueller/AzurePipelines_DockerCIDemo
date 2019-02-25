@@ -10,10 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Services\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="4tecture.DataAccess.Common" Version="0.8.0" />
     <PackageReference Include="4tecture.DataAccess.EntityFramework" Version="0.8.0" />
     <PackageReference Include="4tecture.Modularity.Common" Version="0.8.0" />

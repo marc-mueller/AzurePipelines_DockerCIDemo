@@ -2,10 +2,10 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 fullnameOverride: devfunapi
-replicaCount: 2
+replicaCount: VALUE_TO_OVERRIDE
 image:
-  repository: VALUE_TO_BE_OVERRIDDEN
-  tag: latest
+  repository: VALUE_TO_OVERRIDE
+  tag: VALUE_TO_OVERRIDE
 
 imagePullSecrets:
   - name: acrauth
@@ -26,11 +26,11 @@ ingress:
     kubernetes.io/tls-acme: "true"
   path: /
   hosts:
-    - api.dev.devfun.4tecture.ch
+    - VALUE_TO_OVERRIDE
   tls:
-    - secretName: apidevfun-tls
+    - secretName: VALUE_TO_OVERRIDE
       hosts:
-        - api.dev.devfun.4tecture.ch
+        - VALUE_TO_OVERRIDE
 
 secrets:
   # Optionally specify a set of secret objects whose values
@@ -44,6 +44,11 @@ secrets:
   # as the environment variable MYSECRET_MYPASSWORD=123.
   # mysecret:
   #   mypassword: 123
+
+envvariables:
+  applicationinsights__instrumentationkey: VALUE_TO_OVERRIDE
+  devfunoptions__deploymentenvironment: VALUE_TO_OVERRIDE
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -60,9 +65,3 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-applicationInsights:
-  InstrumentationKey: VALUE_TO_BE_OVERRIDDEN
-
-DevFunOptions:
-  DeploymentEnvironment: "Development"

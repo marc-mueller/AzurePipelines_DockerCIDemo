@@ -12,8 +12,9 @@ ingress:
       hosts:
         - __IngressHostName__
 
-applicationInsights:
-  InstrumentationKey: __InstrumentationKey__
-
-DevFunOptions:
-  Url: __ServiceUrl__
+envvariables:
+  applicationinsights__instrumentationkey: __InstrumentationKey__
+  devfunoptions__url: __ServiceUrl__
+  devfunoptions__deploymentenvironment: __DeploymentEnvironment__
+  devfunoptions__alternatetestingurl: __AlternateTestingUrl__
+  devfunoptions__flagenablealternateurl: __FlagEnableAlternateUrl__

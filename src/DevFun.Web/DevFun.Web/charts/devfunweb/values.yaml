@@ -44,6 +44,14 @@ secrets: {}
   # as the environment variable MYSECRET_MYPASSWORD=123.
   # mysecret:
   #   mypassword: 123
+
+envvariables:
+  applicationinsights__instrumentationkey: VALUE_TO_BE_OVERRIDDEN
+  devfunoptions__url: VALUE_TO_OVERRIDE
+  devfunoptions__deploymentenvironment: VALUE_TO_OVERRIDE
+  devfunoptions__alternatetestingurl: VALUE_TO_OVERRIDE
+  devfunoptions__flagenablealternateurl: VALUE_TO_OVERRIDE
+
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -60,10 +68,3 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
-
-applicationInsights:
-  InstrumentationKey: VALUE_TO_BE_OVERRIDDEN
-
-DevFunOptions:
-  Url: "http://devfun.api/api"
-  DeploymentEnvironment: "Development"

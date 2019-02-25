@@ -36,13 +36,11 @@ spec:
               path: /
               port: http
           env:
-            - name: APPINSIGHTS_INSTRUMENTATIONKEY
-              value: {{ .Values.applicationInsights.InstrumentationKey }}
-            - name: DevFunOptions__Url
-              value: {{ .Values.DevFunOptions.Url }}
-            - name: DevFunOptions__DeploymentEnvironment
-              value: {{ .Values.DevFunOptions.DeploymentEnvironment }}
             {{- $root := . }}
+            {{- range $key, $value := .Values.envvariables }}
+            - name: {{ $key }}
+              value: {{ $value }}
+            {{- end }}
             {{- range $ref, $values := .Values.secrets }}
             {{- range $key, $value := $values }}
             - name: {{ $ref | upper }}_{{ $key | upper }}

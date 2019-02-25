@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using DevFun.Web.Options;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using Newtonsoft.Json;
+using System.Threading.Tasks;
 using DevFun.Web.Entities;
+using DevFun.Web.Options;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace DevFun.Web.Controllers
 {
@@ -22,6 +20,8 @@ namespace DevFun.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
+            ViewData["FlagEnableAlternateUrl"] = apiOptions.FlagEnableAlternateUrl;
+            ViewData["UseAlternateUrl"] = Request.Query.ContainsKey("useAlternateUrl") && bool.Parse(Request.Query["useAlternateUrl"]) ? true : false;
             var joke = await GetRandomJoke();
             return View(joke);
         }
@@ -29,7 +29,7 @@ namespace DevFun.Web.Controllers
         public IActionResult About()
         {
             ViewData["DeploymentEnvironment"] = apiOptions.DeploymentEnvironment;
-            
+
             return View();
         }
 
@@ -44,15 +44,18 @@ namespace DevFun.Web.Controllers
         }
 
         private HttpClient httpClient;
+
         public HttpClient Client
         {
             get
             {
                 if (httpClient == null)
                 {
+                    string baseUrl = apiOptions.FlagEnableAlternateUrl && Request.Query.ContainsKey("useAlternateUrl") && bool.Parse(Request.Query["useAlternateUrl"]) ? apiOptions.AlternateTestingUrl : apiOptions.ApiUrl;
+
                     HttpClient client = new HttpClient()
                     {
-                        BaseAddress = new Uri(apiOptions.ApiUrl)
+                        BaseAddress = new Uri(baseUrl)
                     };
                     client.DefaultRequestHeaders.Accept.Clear();
                     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -68,7 +71,7 @@ namespace DevFun.Web.Controllers
             DevJoke devJoke = null;
             try
             {
-                HttpResponseMessage response = await Client.GetAsync(Client.BaseAddress + "/jokes/random");
+                HttpResponseMessage response = await Client.GetAsync("/api/jokes/random");
                 if (response.IsSuccessStatusCode)
                 {
                     var jsonResponse = await response.Content.ReadAsStringAsync();
@@ -78,7 +81,7 @@ namespace DevFun.Web.Controllers
                     }
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
                 // todo
             }

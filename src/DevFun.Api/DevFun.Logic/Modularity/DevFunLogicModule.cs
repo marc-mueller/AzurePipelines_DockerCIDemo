@@ -1,11 +1,8 @@
-﻿using _4tecture.Modularity.Common;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using _4tecture.DependencyInjection.Common;
+﻿using _4tecture.DependencyInjection.Common;
+using _4tecture.Modularity.Common;
 using DevFun.Common.Repositories;
-using DevFun.Logic.Repositories;
 using DevFun.Common.Services;
+using DevFun.Logic.Repositories;
 using DevFun.Logic.Services;
 
 namespace DevFun.Logic.Modularity
@@ -18,6 +15,7 @@ namespace DevFun.Logic.Modularity
             serviceCollection.AddTransient<ICategoryRepository, CategoryRepository>();
 
             serviceCollection.AddTransient<IDevJokeService, DevJokeService>();
+            serviceCollection.AddTransient<ICategoryService, CategoryService>();
 
             return serviceCollection;
         }

@@ -18,33 +18,34 @@ namespace DevFun.Api.Controllers
             this.DevJokeService = devJokeService ?? throw new ArgumentNullException(nameof(devJokeService));
         }
 
-        // GET api/values
+        // GET api/jokes
         [HttpGet]
         public async Task<IEnumerable<DevJoke>> Get()
         {
             return await this.DevJokeService.GetJokes();
         }
 
+        // GET api/jokes/random
         [HttpGet("random")]
         public async Task<DevJoke> GetRandom()
         {
             return await this.DevJokeService.GetRandomJoke();
         }
 
-        // GET api/values/5
+        // GET api/jokes/5
         [HttpGet("{id}")]
         public async Task<DevJoke> Get(int id)
         {
             return await this.DevJokeService.GetJokeById(id);
         }
 
-        // POST api/values
+        // POST api/jokes
         [HttpPost]
         public async Task<ActionResult> Post([FromBody]DevJoke value)
         {
             if (value == null)
             {
-                return BadRequest("Public key data is null.");
+                return BadRequest();
             }
 
             try
@@ -63,7 +64,7 @@ namespace DevFun.Api.Controllers
             }
         }
 
-        // PUT api/values/5
+        // PUT api/jokes/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(int id, [FromBody]DevJoke value)
         {
@@ -72,8 +73,8 @@ namespace DevFun.Api.Controllers
                 return BadRequest();
             }
 
-            var pkData = await DevJokeService.GetJokeById(id);
-            if (pkData == null)
+            var joke = await DevJokeService.GetJokeById(id);
+            if (joke == null)
             {
                 return NotFound();
             }
@@ -82,7 +83,7 @@ namespace DevFun.Api.Controllers
             return new ObjectResult(updatedPkData);
         }
 
-        // DELETE api/values/5
+        // DELETE api/jokes/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

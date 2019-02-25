@@ -1,13 +1,28 @@
 ﻿@model DevFun.Web.Entities.DevJoke
 <div class="row" style="margin-bottom:50px">
-    <div class="col-md-12">
+    <div class="col-md-10">
         <h2>DevFun</h2>
     </div>
-</div>
+    @if ((bool)ViewData["FlagEnableAlternateUrl"])
+    {
+        <div class="col-md-2">
+            <h4 style="color:red"> Enable Feature Flag</h4>
 
+            @if ((bool)ViewData["UseAlternateUrl"])
+            {
+                <a href="@Url.Action("Index", new { useAlternateUrl = false } )">Use original Url</a>
+
+            }
+            else
+            {
+                <a href="@Url.Action("Index", new { useAlternateUrl = true } )">Use alternate Url</a>
+            }
+        </div>
+    }
+</div>
 <div class="row" style="font-size:20pt;background-color:lightgray">
     <div class="col-md-4">
-        <label>Random Joke:</label><br/>
+        <label>Random Joke:</label><br />
         <small>Category: @Model?.Category?.Name</small>
     </div>
     <div class="col-md-8">
