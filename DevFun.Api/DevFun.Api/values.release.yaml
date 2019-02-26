@@ -14,3 +14,6 @@ ingress:
 envvariables:
   applicationinsights__instrumentationkey: __InstrumentationKey__
   devfunoptions__deploymentenvironment: __DeploymentEnvironment__
+  connectionstrings__devfundatabase: __ConnectionString__
+
+explicitCertIssuer: __CertIssuer__

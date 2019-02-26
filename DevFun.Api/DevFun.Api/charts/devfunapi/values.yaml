@@ -48,6 +48,7 @@ secrets:
 envvariables:
   applicationinsights__instrumentationkey: VALUE_TO_OVERRIDE
   devfunoptions__deploymentenvironment: VALUE_TO_OVERRIDE
+  connectionstrings__devfundatabase: VALUE_TO_OVERRIDE
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -65,3 +66,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+explicitCertIssuer: VALUE_TO_OVERRIDE

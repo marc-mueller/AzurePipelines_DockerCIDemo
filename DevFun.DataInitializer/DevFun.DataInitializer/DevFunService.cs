@@ -18,7 +18,10 @@ namespace DevFun.DataInitializer
 
         public DevFunService(Uri serviceHostBaseUri)
         {
-            this.client = new HttpClient();
+            var handler = new HttpClientHandler();
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+
+            this.client = new HttpClient(handler);
             client.BaseAddress = serviceHostBaseUri ?? throw new ArgumentNullException(nameof(serviceHostBaseUri));
             client.Timeout = new TimeSpan(0, 0, 10);
         }
