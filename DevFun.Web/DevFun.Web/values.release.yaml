@@ -18,3 +18,5 @@ envvariables:
   devfunoptions__deploymentenvironment: __DeploymentEnvironment__
   devfunoptions__alternatetestingurl: __AlternateTestingUrl__
   devfunoptions__flagenablealternateurl: __FlagEnableAlternateUrl__
+
+explicitCertIssuer: __CertIssuer__

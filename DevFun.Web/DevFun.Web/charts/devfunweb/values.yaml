@@ -68,3 +68,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+explicitCertIssuer: VALUE_TO_OVERRIDE
