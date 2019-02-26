@@ -39,7 +39,7 @@ spec:
             {{- $root := . }}
             {{- range $key, $value := .Values.envvariables }}
             - name: {{ $key }}
-              value: {{ $value }}
+              value: {{ $value | quote }}
             {{- end }}
             {{- range $ref, $values := .Values.secrets }}
             {{- range $key, $value := $values }}

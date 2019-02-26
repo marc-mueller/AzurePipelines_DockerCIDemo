@@ -17,6 +17,4 @@ envvariables:
   devfunoptions__url: __ServiceUrl__
   devfunoptions__deploymentenvironment: __DeploymentEnvironment__
   devfunoptions__alternatetestingurl: __AlternateTestingUrl__
-  devfunoptions__flagenablealternateurl: __FlagEnableAlternateUrl__
-
-explicitCertIssuer: __CertIssuer__
+  devfunoptions__flagenablealternateurl: "__FlagEnableAlternateUrl__"
