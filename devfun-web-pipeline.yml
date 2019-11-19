@@ -8,7 +8,7 @@ variables:
   KubernetesCluster: 'aks2376'
   ReplicaCount: 3
   FlagEnableAlternateUrl: false
-  HelmReleaseName: devfunweb-$(Release.EnvironmentName)
+  HelmReleaseName: 'devfunweb-$(k8sNamespace)'
   ImageName: '$(AzureContainerRegistry)/devfunweb'
   IngressHostName: 'web.devfun.$(k8sNamespace).demo.4tecture.ch'
   ServiceUrl: 'https://api.devfun.$(k8sNamespace).demo.4tecture.ch'
@@ -170,7 +170,7 @@ stages:
               Write-Host "##vso[task.setvariable variable=k8sNamespace;]pr-$($prId)"
             displayName: 'Define PR related Variables'
           - task: Kubernetes@1
-            displayName: 'Create Namespace for PR'
+            displayName: 'Create Namespace for $(k8sNamespace)'
             inputs:
               connectionType: 'Azure Resource Manager'
               azureSubscriptionEndpoint: '$(AzureSubscription)'
@@ -317,6 +317,42 @@ stages:
               helmVersion: '$(HelmVersion)'
               checkLatestHelmVersion: false
               installKubectl: true
+          - task: Kubernetes@1
+            displayName: 'Create Namespace for $(k8sNamespace)'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              command: 'apply'
+              useConfigurationFile: true
+              configurationType: 'inline'
+              inline: |
+                kind: Namespace
+                apiVersion: v1
+                metadata:
+                  name: $(k8snamespace)
+                spec: {}
+                status: {}
+              secretType: 'dockerRegistry'
+              containerRegistryType: 'Azure Container Registry'
+          - task: Kubernetes@1
+            displayName: Add pull secret to namespace
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              namespace: '$(k8snamespace)'
+              command: 'get'
+              arguments: 'namespace $(k8snamespace)'
+              secretType: 'dockerRegistry'
+              containerRegistryType: 'Azure Container Registry'
+              azureSubscriptionEndpointForSecrets: '$(AzureSubscription)'
+              azureContainerRegistry: '$(AzureContainerRegistry)'
+              secretName: 'acrauth'
           - task: HelmDeploy@0
             displayName: 'helm upgrade'
             inputs:
@@ -361,6 +397,42 @@ stages:
               helmVersion: '$(HelmVersion)'
               checkLatestHelmVersion: false
               installKubectl: true
+          - task: Kubernetes@1
+            displayName: 'Create Namespace for $(k8sNamespace)'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              command: 'apply'
+              useConfigurationFile: true
+              configurationType: 'inline'
+              inline: |
+                kind: Namespace
+                apiVersion: v1
+                metadata:
+                  name: $(k8snamespace)
+                spec: {}
+                status: {}
+              secretType: 'dockerRegistry'
+              containerRegistryType: 'Azure Container Registry'
+          - task: Kubernetes@1
+            displayName: Add pull secret to namespace
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              namespace: '$(k8snamespace)'
+              command: 'get'
+              arguments: 'namespace $(k8snamespace)'
+              secretType: 'dockerRegistry'
+              containerRegistryType: 'Azure Container Registry'
+              azureSubscriptionEndpointForSecrets: '$(AzureSubscription)'
+              azureContainerRegistry: '$(AzureContainerRegistry)'
+              secretName: 'acrauth'
           - task: HelmDeploy@0
             displayName: 'helm upgrade'
             inputs:
