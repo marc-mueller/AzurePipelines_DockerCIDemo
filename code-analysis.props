@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup Label="Code Analysis">
+    <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
+    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)4tecture.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <!--<ItemGroup Label="Code Analysis Custom Dictionaries">
+    <CodeAnalysisDictionary Include="$(MSBuildThisFileDirectory)custom-dictionary.xml" Link="custom-dictionary.xml" />
+  </ItemGroup>-->
+
+  <!--<ItemGroup Label="Code Analysis StyleCop">
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" Visible="false" />
+  </ItemGroup>-->
+
+  <ItemGroup Label="Code Analysis">
+    <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" Version="1.2.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="AsyncFixer" Version="1.1.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Features" Version="3.3.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.3.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.7">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.Razor" Version="3.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <!--<PackageReference Include="CSharpGuidelinesAnalyzer" Version="3.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>-->
+    <!--<PackageReference Include="StyleCop.Analyzers" Version="1.1.1-beta.61">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>-->
+  </ItemGroup>
+
+  <ItemGroup  Condition=" '$(TargetFramework)' == 'netcoreapp3.0' " Label="Code Analysis AspNetCore">
+    <PackageReference Include="Microsoft.AspNetCore.MiddlewareAnalysis" Version="3.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

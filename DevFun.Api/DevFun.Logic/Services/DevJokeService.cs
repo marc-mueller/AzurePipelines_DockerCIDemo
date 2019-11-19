@@ -1,105 +1,85 @@
-﻿using DevFun.Common.Services;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using DevFun.Common.Entities;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using _4tecture.DataAccess.Common.Repositories;
+using _4tecture.DataAccess.Common.Storages;
+using DevFun.Common.Entities;
+using DevFun.Common.Repositories;
+using DevFun.Common.Services;
 using DevFun.Common.Storages;
 using Microsoft.Extensions.Logging;
-using _4tecture.DataAccess.Common.Storages;
-using DevFun.Common.Repositories;
-using System.Linq;
 
 namespace DevFun.Logic.Services
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("AsyncUsage", "AsyncFixer01:Unnecessary async/await usage", Justification = "because of the using and Task<>, the object is disposed too early when not using async/await in combination with using")]
     public class DevJokeService : IDevJokeService
     {
-        public IStorageFactory<IDevFunStorage> StorageFactory { get; private set; }
-        public ILogger Logger { get; private set; }
+        private readonly IStorageFactory<IDevFunStorage> storageFactory;
+        private readonly ILogger<DevJokeService> logger;
 
         public DevJokeService(
             IStorageFactory<IDevFunStorage> storageFactory,
-            ILoggerFactory loggerFactory)
+            ILogger<DevJokeService> logger)
         {
-            this.StorageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
-            this.Logger = loggerFactory.CreateLogger(nameof(DevJokeService));
+            this.storageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-     
+        public async Task<int> GetCount()
+        {
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<IDevJokeRepository>();
+            var result = (await repo.GetAll().ConfigureAwait(false)).Count();
+            return result;
+        }
+
+        public async Task<DevJoke> GetRandomJoke()
+        {
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<IDevJokeRepository>();
+            var result = (await repo.GetAll().ConfigureAwait(false)).OrderBy(r => Guid.NewGuid()).FirstOrDefault();
+            return result;
+        }
+
+        public async Task<IPagedEnumerable<DevJoke>> GetAll(QueryFilter<DevJoke> queryFilter = null, TrackingBehavior trackingBehavior = TrackingBehavior.Tracking)
+        {
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<IDevJokeRepository>();
+            return await repo.GetAll(queryFilter, trackingBehavior).ConfigureAwait(false);
+        }
+
+        public async Task<DevJoke> GetById(int id, TrackingBehavior trackingBehavior = TrackingBehavior.Tracking)
+        {
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<IDevJokeRepository>();
+            return await repo.GetById(id, trackingBehavior).ConfigureAwait(false);
+        }
 
         public async Task<DevJoke> Create(DevJoke joke)
         {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<IDevJokeRepository>();
-                var result = repo.AddDetached(joke);
-                await session.SaveChanges();
-                return result;
-            }
-        }
-
-        public async Task<DevJoke> Delete(int id)
-        {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<IDevJokeRepository>();
-                var result = repo.Delete(id);
-                await session.SaveChanges();
-                return result;
-            }
-        }
-
-        public Task<IEnumerable<DevJoke>> GetJokes()
-        {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<IDevJokeRepository>();
-                var result = repo.GetAll().ToList();
-                return Task.FromResult(result.AsEnumerable<DevJoke>());
-            }
-        }
-
-        public Task<int> GetCount()
-        {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<IDevJokeRepository>();
-                var result = repo.GetAll().Count();
-                return Task.FromResult(result);
-            }
-        }
-
-        public Task<DevJoke> GetJokeById(int id)
-        {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<IDevJokeRepository>();
-                var result = repo.GetById(id);
-                return Task.FromResult(result);
-            }
-        }
-
-        public Task<DevJoke> GetRandomJoke()
-        {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<IDevJokeRepository>();
-                var result = repo.GetAll().OrderBy(r => Guid.NewGuid()).FirstOrDefault();
-                return Task.FromResult(result);
-            }
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<IDevJokeRepository>();
+            var result = await repo.AddDetached(joke).ConfigureAwait(false);
+            await session.SaveChanges().ConfigureAwait(false);
+            return result;
         }
 
         public async Task<DevJoke> Update(DevJoke joke)
         {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<IDevJokeRepository>();
-                var result = repo.UpdateDetached(joke);
-                await session.SaveChanges();
-                return result;
-            }
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<IDevJokeRepository>();
+            var result = await repo.UpdateDetached(joke).ConfigureAwait(false);
+            await session.SaveChanges().ConfigureAwait(false);
+            return result;
         }
 
-        
+        public async Task<DevJoke> Delete(int id)
+        {
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<IDevJokeRepository>();
+            var result = await repo.Delete(id).ConfigureAwait(false);
+            await session.SaveChanges().ConfigureAwait(false);
+            return result;
+        }
     }
 }

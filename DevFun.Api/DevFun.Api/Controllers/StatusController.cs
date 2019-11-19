@@ -1,37 +1,42 @@
 ﻿using System;
 using System.Reflection;
-using System.Threading.Tasks;
-using DevFun.Api.DTOs;
+using _4tecture.AspNetCoreExtensions.Controllers;
+using DevFun.Common.Dtos;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 
 namespace DevFun.Api.Controllers
 {
+    [AllowAnonymous]
+    [ApiExplorerSettings(IgnoreApi = true)]
     [Produces("application/json")]
-    [Route("api/Status")]
-    [ApiController]
-    public class StatusController : Controller
+    [Route("api/[controller]")]
+    public class StatusController : FrameworkControllerBase
     {
-        private readonly IConfiguration configuration;
+        private readonly IWebHostEnvironment environment;
 
-        public StatusController(IConfiguration configuration)
+        public StatusController(IWebHostEnvironment environment)
         {
-            this.configuration = configuration;
+            this.environment = environment ?? throw new ArgumentNullException(nameof(environment));
         }
 
         [HttpGet()]
-        [Produces(typeof(StatusResponse))]
-        public Task<StatusResponse> GetCurrentStatus()
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<StatusResponseDto> GetStatus()
         {
-            var status = new StatusResponse();
-            status.AssemblyInfoVersion = this.GetType().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
-            status.AssemblyVersion = this.GetType().Assembly.GetName().Version.ToString();
-            status.AssemblyFileVersion = this.GetType().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
+            var status = new StatusResponseDto
+            {
+                AssemblyInfoVersion = this.GetType().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion,
+                AssemblyVersion = this.GetType().Assembly.GetName().Version.ToString(),
+                AssemblyFileVersion = this.GetType().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version,
 
-            status.MachineName = Environment.MachineName;
-            status.DeploymentEnvironment = this.configuration["DevFunOptions:DeploymentEnvironment"];
+                MachineName = Environment.MachineName,
+                EnvironmentName = this.environment?.EnvironmentName ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+            };
 
-            return Task.FromResult(status);
+            return Ok(status);
         }
     }
 }

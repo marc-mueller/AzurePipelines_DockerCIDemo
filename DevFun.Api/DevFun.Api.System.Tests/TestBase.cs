@@ -1,15 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Net.Http;
-using System.Text;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace DevFun.Api.System.Tests
 {
     [TestClass]
     public class TestBase
     {
-
         public string BaseUrl
         {
             get
@@ -33,7 +30,6 @@ namespace DevFun.Api.System.Tests
             client.BaseAddress = new Uri(this.BaseUrl);
             return client;
         }
-
 
         public TestContext TestContext { get; set; }
     }

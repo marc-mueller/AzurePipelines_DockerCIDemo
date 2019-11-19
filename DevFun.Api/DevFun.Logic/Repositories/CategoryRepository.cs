@@ -1,22 +1,20 @@
-﻿using _4tecture.DataAccess.Common.Repositories;
-using DevFun.Common.Repositories;
-using System;
+﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
+using _4tecture.DataAccess.Common.Repositories;
 using _4tecture.DataAccess.Common.Storages;
 using DevFun.Common.Entities;
-using System.Linq;
+using DevFun.Common.Repositories;
 
 namespace DevFun.Logic.Repositories
 {
-    public class CategoryRepository : RepositoryBase<Category, int, Category>, ICategoryRepository
+    public class CategoryRepository : RepositoryBase<Category, int>, ICategoryRepository
     {
-        public CategoryRepository(IStorage storage) : base(storage)
-        {
-        }
+        protected override Expression<Func<Category, int>> IdPropertyExpression => e => e.Id;
 
-        protected override Expression<Func<Category, bool>> GetPrimaryKeyFilterExpression(int keyValue)
+        public CategoryRepository(IStorage storage, IDetachedEntityMapperFactory mapperFactory)
+            : base(storage, mapperFactory)
         {
-            return e => e.Id == keyValue;
         }
 
         protected override IQueryable<Category> ApplyDefaultIncludes(IQueryable<Category> query)
@@ -24,9 +22,9 @@ namespace DevFun.Logic.Repositories
             return query;
         }
 
-        protected override int GetIdForDto(Category detachedEntity)
+        protected override Expression<Func<Category, bool>> DefineEntitySecurityFilterExpression(RepositoryAction action)
         {
-            return detachedEntity.Id;
+            return e => true;
         }
     }
 }

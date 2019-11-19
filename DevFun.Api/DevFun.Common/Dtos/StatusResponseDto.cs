@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace DevFun.Api.DTOs
+﻿namespace DevFun.Common.Dtos
 {
-    public class StatusResponse
+    public class StatusResponseDto
     {
         public string AssemblyInfoVersion { get; set; }
         public string MachineName { get; set; }
         public string AssemblyVersion { get; set; }
         public string AssemblyFileVersion { get; set; }
-        public string DeploymentEnvironment { get; set; }
+        public string EnvironmentName { get; set; }
     }
 }

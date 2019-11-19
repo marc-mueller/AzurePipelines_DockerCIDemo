@@ -1,12 +1,12 @@
-using DevFun.Api.System.Tests.Entities;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using DevFun.Api.System.Tests.Entities;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 
 namespace DevFun.Api.System.Tests
 {
@@ -16,10 +16,10 @@ namespace DevFun.Api.System.Tests
         [TestMethod]
         public async Task AddJokes()
         {
-            // Arrange 
-            var client = this.CreateHttpClient();
+            // Arrange
+            using var client = this.CreateHttpClient();
 
-            var initialJokes = JsonConvert.DeserializeObject<IEnumerable<DevJoke>>(await (await client.GetAsync("api/jokes")).Content.ReadAsStringAsync());
+            var initialJokes = JsonConvert.DeserializeObject<IEnumerable<DevJoke>>(await (await client.GetAsync("api/jokes").ConfigureAwait(false)).Content.ReadAsStringAsync().ConfigureAwait(false));
 
             var jokes = new List<DevJoke>() {
                 new DevJoke() { Text = @"Programmer\r\nA machine that turns coffee into code." },
@@ -35,7 +35,7 @@ namespace DevFun.Api.System.Tests
             // Act
             foreach (var joke in jokes)
             {
-                var response = await client.PostAsync("/api/jokes", new StringContent(JsonConvert.SerializeObject(joke), Encoding.UTF8, "application/json-patch+json"));
+                var response = await client.PostAsync("/api/jokes", new StringContent(JsonConvert.SerializeObject(joke), Encoding.UTF8, "application/json-patch+json")).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new Exception(response.StatusCode.ToString());
@@ -43,7 +43,7 @@ namespace DevFun.Api.System.Tests
             }
 
             // Assert
-            var receivedJokes = JsonConvert.DeserializeObject<IEnumerable<DevJoke>>(await (await client.GetAsync("api/jokes")).Content.ReadAsStringAsync());
+            var receivedJokes = JsonConvert.DeserializeObject<IEnumerable<DevJoke>>(await (await client.GetAsync("api/jokes").ConfigureAwait(false)).Content.ReadAsStringAsync().ConfigureAwait(false));
             Assert.AreEqual(jokes.Count - initialJokes?.Count(), receivedJokes?.Count());
         }
     }

@@ -8,18 +8,23 @@ using Newtonsoft.Json;
 
 namespace DevFun.DataInitializer
 {
-    public class DevFunService
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ok for sample")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2234:Pass system uri objects instead of strings", Justification = "ok for sample")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "ok for sample")]
+    public class DevFunService : IDisposable
     {
         private readonly HttpClient client;
 
-        private const string apiCategoryController = "/api/category";
+        private const string apiCategoryController = "/api/v1.0/category";
 
-        private const string apiJokesController = "/api/jokes";
+        private const string apiJokesController = "/api/v1.0/jokes";
 
         public DevFunService(Uri serviceHostBaseUri)
         {
-            var handler = new HttpClientHandler();
-            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
 
             this.client = new HttpClient(handler);
             client.BaseAddress = serviceHostBaseUri ?? throw new ArgumentNullException(nameof(serviceHostBaseUri));
@@ -30,7 +35,7 @@ namespace DevFun.DataInitializer
         {
             try
             {
-                var json = await client.GetStringAsync($"{apiJokesController}");
+                var json = await client.GetStringAsync($"{apiJokesController}").ConfigureAwait(false);
                 IEnumerable<JokeDto> jokes = JsonConvert.DeserializeObject<List<JokeDto>>(json);
                 return jokes;
             }
@@ -46,7 +51,7 @@ namespace DevFun.DataInitializer
         {
             try
             {
-                var json = await client.GetStringAsync($"{apiJokesController}/{id}");
+                var json = await client.GetStringAsync($"{apiJokesController}/{id}").ConfigureAwait(false);
                 JokeDto joke = JsonConvert.DeserializeObject<JokeDto>(json);
                 return joke;
             }
@@ -63,8 +68,8 @@ namespace DevFun.DataInitializer
             try
             {
                 var jokeData = JsonConvert.SerializeObject(jokeDto);
-                var response = await client.PostAsync($"{apiJokesController}", new StringContent(jokeData, Encoding.UTF8, "application/json"));
-                var contents = await response.Content.ReadAsStringAsync();
+                var response = await client.PostAsync($"{apiJokesController}", new StringContent(jokeData, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                var contents = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 JokeDto joke = JsonConvert.DeserializeObject<JokeDto>(contents);
                 return joke;
             }
@@ -78,11 +83,16 @@ namespace DevFun.DataInitializer
 
         public async Task<JokeDto> UpdateJoke(JokeDto jokeDto)
         {
+            if (jokeDto is null)
+            {
+                throw new ArgumentNullException(nameof(jokeDto));
+            }
+
             try
             {
                 var jokeData = JsonConvert.SerializeObject(jokeDto);
-                var response = await client.PutAsync($"{apiJokesController}/{jokeDto.Id}", new StringContent(jokeData, Encoding.UTF8, "application/json"));
-                var contents = await response.Content.ReadAsStringAsync();
+                var response = await client.PutAsync($"{apiJokesController}/{jokeDto.Id}", new StringContent(jokeData, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                var contents = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 JokeDto joke = JsonConvert.DeserializeObject<JokeDto>(contents);
                 return joke;
             }
@@ -98,8 +108,8 @@ namespace DevFun.DataInitializer
         {
             try
             {
-                var response = await client.DeleteAsync($"{apiJokesController}/{id}");
-                var contents = await response.Content.ReadAsStringAsync();
+                var response = await client.DeleteAsync($"{apiJokesController}/{id}").ConfigureAwait(false);
+                var contents = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 JokeDto joke = JsonConvert.DeserializeObject<JokeDto>(contents);
                 return joke;
             }
@@ -115,7 +125,7 @@ namespace DevFun.DataInitializer
         {
             try
             {
-                var json = await client.GetStringAsync($"{apiCategoryController}");
+                var json = await client.GetStringAsync($"{apiCategoryController}").ConfigureAwait(false);
                 IEnumerable<CategoryDto> categories = JsonConvert.DeserializeObject<List<CategoryDto>>(json);
                 return categories;
             }
@@ -131,7 +141,7 @@ namespace DevFun.DataInitializer
         {
             try
             {
-                var json = await client.GetStringAsync($"{apiCategoryController}/{id}");
+                var json = await client.GetStringAsync($"{apiCategoryController}/{id}").ConfigureAwait(false);
                 CategoryDto category = JsonConvert.DeserializeObject<CategoryDto>(json);
                 return category;
             }
@@ -148,8 +158,8 @@ namespace DevFun.DataInitializer
             try
             {
                 var categoryData = JsonConvert.SerializeObject(categoryDto);
-                var response = await client.PostAsync($"{apiCategoryController}", new StringContent(categoryData, Encoding.UTF8, "application/json"));
-                var contents = await response.Content.ReadAsStringAsync();
+                var response = await client.PostAsync($"{apiCategoryController}", new StringContent(categoryData, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                var contents = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 CategoryDto category = JsonConvert.DeserializeObject<CategoryDto>(contents);
                 return category;
             }
@@ -163,11 +173,16 @@ namespace DevFun.DataInitializer
 
         public async Task<CategoryDto> UpdateCategory(CategoryDto categoryDto)
         {
+            if (categoryDto is null)
+            {
+                throw new ArgumentNullException(nameof(categoryDto));
+            }
+
             try
             {
                 var categoryData = JsonConvert.SerializeObject(categoryDto);
-                var response = await client.PutAsync($"{apiCategoryController}/{categoryDto.Id}", new StringContent(categoryData, Encoding.UTF8, "application/json"));
-                var contents = await response.Content.ReadAsStringAsync();
+                var response = await client.PutAsync($"{apiCategoryController}/{categoryDto.Id}", new StringContent(categoryData, Encoding.UTF8, "application/json")).ConfigureAwait(false);
+                var contents = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 CategoryDto category = JsonConvert.DeserializeObject<CategoryDto>(contents);
                 return category;
             }
@@ -183,8 +198,8 @@ namespace DevFun.DataInitializer
         {
             try
             {
-                var response = await client.DeleteAsync($"{apiCategoryController}/{id}");
-                var contents = await response.Content.ReadAsStringAsync();
+                var response = await client.DeleteAsync($"{apiCategoryController}/{id}").ConfigureAwait(false);
+                var contents = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 CategoryDto category = JsonConvert.DeserializeObject<CategoryDto>(contents);
                 return category;
             }
@@ -195,5 +210,30 @@ namespace DevFun.DataInitializer
 
             return null;
         }
+
+        #region IDisposable Support
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    this.client?.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
     }
 }

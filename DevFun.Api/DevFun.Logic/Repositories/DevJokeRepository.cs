@@ -1,25 +1,21 @@
-﻿using _4tecture.DataAccess.Common.Repositories;
-using DevFun.Common.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
+using _4tecture.DataAccess.Common.Repositories;
 using _4tecture.DataAccess.Common.Storages;
 using DevFun.Common.Entities;
-using System.Linq;
+using DevFun.Common.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevFun.Logic.Repositories
 {
-    public class DevJokeRepository : RepositoryBase<DevJoke, int, DevJoke>, IDevJokeRepository
+    public class DevJokeRepository : RepositoryBase<DevJoke, int>, IDevJokeRepository
     {
-        public DevJokeRepository(IStorage storage) : base(storage)
-        {
-        }
+        protected override Expression<Func<DevJoke, int>> IdPropertyExpression => e => e.Id;
 
-        protected override Expression<Func<DevJoke, bool>> GetPrimaryKeyFilterExpression(int keyValue)
+        public DevJokeRepository(IStorage storage, IDetachedEntityMapperFactory mapperFactory)
+            : base(storage, mapperFactory)
         {
-            return e => e.Id == keyValue;
         }
 
         protected override IQueryable<DevJoke> ApplyDefaultIncludes(IQueryable<DevJoke> query)
@@ -27,9 +23,9 @@ namespace DevFun.Logic.Repositories
             return query.Include(i => i.Category);
         }
 
-        protected override int GetIdForDto(DevJoke detachedEntity)
+        protected override Expression<Func<DevJoke, bool>> DefineEntitySecurityFilterExpression(RepositoryAction action)
         {
-            return detachedEntity.Id;
+            return e => true;
         }
     }
 }

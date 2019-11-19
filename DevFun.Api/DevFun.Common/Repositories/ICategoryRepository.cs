@@ -1,12 +1,9 @@
 ﻿using _4tecture.DataAccess.Common.Repositories;
 using DevFun.Common.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DevFun.Common.Repositories
 {
-    public interface ICategoryRepository : IRepository<Category, int, Category>
+    public interface ICategoryRepository : IRepository<Category, int>
     {
     }
 }

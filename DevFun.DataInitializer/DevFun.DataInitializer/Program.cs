@@ -14,7 +14,7 @@ namespace DevFun.DataInitializer
         {
             var devFunService = new DevFunService(new Uri(this.ServiceBaseUrl));
             var dataInitializer = new DataInitializer(devFunService);
-            dataInitializer.InitializeData().Wait();
+            dataInitializer.InitializeData().GetAwaiter().GetResult();
             Console.WriteLine("Data initialized.");
         }
     }

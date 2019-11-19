@@ -1,4 +1,4 @@
-﻿@model DevFun.Web.Entities.DevJoke
+﻿@model DevFun.Web.Dtos.DevJokeDto
 <div class="row" style="margin-bottom:50px">
     <div class="col-md-10">
         <h2>DevFun</h2>
@@ -23,7 +23,7 @@
 <div class="row" style="font-size:20pt;background-color:lightgray">
     <div class="col-md-4">
         <label>Random Joke:</label><br />
-        <small>Category: @Model?.Category?.Name</small>
+        <small>Category: @Model?.CategoryName</small>
     </div>
     <div class="col-md-8">
         <span>@Html.Raw(Model?.Text?.Replace("\\r\\n", "<br />"))</span>

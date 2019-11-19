@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DevFun.Api.System.Tests.Entities
+﻿namespace DevFun.Api.System.Tests.Entities
 {
     public class DevJoke
     {

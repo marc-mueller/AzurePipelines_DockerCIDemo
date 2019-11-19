@@ -6,6 +6,10 @@ using DevFun.DataInitializer.Dtos;
 
 namespace DevFun.DataInitializer
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "ok for sample")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "ok for sample")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1304:Specify CultureInfo", Justification = "ok for sample")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1307:Specify StringComparison", Justification = "ok for sample")]
     public class DataInitializer
     {
         private readonly DevFunService service;
@@ -19,9 +23,9 @@ namespace DevFun.DataInitializer
         {
             Console.WriteLine("Start initializing test data...");
 
-            await InitializeCategories();
+            await InitializeCategories().ConfigureAwait(false);
 
-            await InitializeJokes();
+            await InitializeJokes().ConfigureAwait(false);
 
             Console.WriteLine("Initializing test data finished.");
         }
@@ -30,19 +34,19 @@ namespace DevFun.DataInitializer
         {
             Console.WriteLine("Check for category data");
 
-            var categories = await this.service.GetCategories();
+            var categories = await service.GetCategories().ConfigureAwait(false);
             if (!categories.Any())
             {
                 Console.WriteLine("No data found, initialize category data");
 
                 try
                 {
-                    await this.service.AddCategory(
+                    await service.AddCategory(
                         new CategoryDto()
                         {
-                            Id = 0,
+                            //Id = 0,
                             Name = "General"
-                        });
+                        }).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -51,12 +55,12 @@ namespace DevFun.DataInitializer
 
                 try
                 {
-                    await this.service.AddCategory(
+                    await service.AddCategory(
                         new CategoryDto()
                         {
-                            Id = 1,
+                            //Id = 1,
                             Name = ".NET"
-                        });
+                        }).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -65,12 +69,12 @@ namespace DevFun.DataInitializer
 
                 try
                 {
-                    await this.service.AddCategory(
+                    await service.AddCategory(
                         new CategoryDto()
                         {
-                            Id = 2,
+                            //Id = 2,
                             Name = "Java"
-                        });
+                        }).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -83,14 +87,14 @@ namespace DevFun.DataInitializer
 
         private async Task InitializeJokes()
         {
-            var categories = await this.service.GetCategories();
-            var generalId = categories.First(c => string.Compare(c.Name, "General", true) == 0).Id;
-            var netId = categories.First(c => string.Compare(c.Name, ".NET", true) == 0).Id;
-            var javaId = categories.First(c => string.Compare(c.Name, "Java", true) == 0).Id;
+            var categories = await service.GetCategories().ConfigureAwait(false);
+            var generalId = categories.First(c => c.Name.Equals("General", StringComparison.OrdinalIgnoreCase)).Id;
+            var netId = categories.First(c => c.Name.Equals(".NET", StringComparison.OrdinalIgnoreCase)).Id;
+            var javaId = categories.First(c => c.Name.Equals("Java", StringComparison.OrdinalIgnoreCase)).Id;
 
             Console.WriteLine("Check for jokes data");
 
-            var existingJokes = await this.service.GetJokes();
+            var existingJokes = await service.GetJokes().ConfigureAwait(false);
             if (!existingJokes.Any())
             {
                 Console.WriteLine("No data found, initialize jokes data");
@@ -112,7 +116,7 @@ namespace DevFun.DataInitializer
                 {
                     try
                     {
-                        await this.service.AddJoke(joke);
+                        await service.AddJoke(joke).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {

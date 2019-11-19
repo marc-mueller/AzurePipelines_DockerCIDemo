@@ -1,0 +1,522 @@
+name : DevFunApi
+trigger:
+  branches:
+    include:
+      - master
+      - releases/*
+  paths:
+    include:
+      - DevFun.Api/*
+variables:
+  AzureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+  AzureContainerRegistry: 4tk8sdemoacr.azurecr.io
+  AzureResourceGroup: 'k8sDemo'
+  KubernetesCluster: 'aks2376'
+  dbresourcegroup: 'dbDemo'
+  dbservername: '4tdbdemoserver'
+  dbservernamefqdn: '$(dbservername).database.windows.net'
+  dbuser: 'dbadmin'
+  # dbpassword: <secret>
+  elasticpoolname: 'dbdemopool'
+  HelmReleaseName: 'devfunapi-$(k8sNamespace)'
+  ImageName: '$(AzureContainerRegistry)/devfunapi'
+  IngressHostName: 'api.devfun.$(k8sNamespace).demo.4tecture.ch'
+  ReplicaCount: 3
+  TlsSecretName: 'devfunapi-tls'
+  ConnectionString: 'Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$(dbname);Persist Security Info=False;User ID=$(dbuser);Password=$(dbpassword);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+  HelmVersion: '3.0.0'
+stages:
+- stage: Build
+  jobs:
+  - job: CI_Build
+    displayName: 'Build the Api'
+    pool:
+      vmImage: 'ubuntu-latest'
+      #name: Default
+    variables:
+      DockerFile: DevFun.Api/DevFun.Api/Dockerfile
+      BuildContext: DevFun.Api
+      ChartPath: DevFun.Api/DevFun.Api/charts/devfunapi
+      ArtifactSourceFolder: DevFun.Api/DevFun.Api
+      ArtifactName: DevFunApi
+    steps:
+    # - template: pipeline/git-version.yml
+      - task: BuildVersioning@0
+        displayName: BuildVersioning
+        inputs:
+          versionSource: 'gitversion'
+          doInstallGitVersion: true
+          GitVersionInstallerSource: 'choco'
+          GitVersionInstallerVersion: '5.0.1'
+          doUseLatestGitVersionInstallerVersion: false
+          paramAssemblyVersion: '7'
+          paramAssemblyFileVersion: '7'
+          paramAssemblyInformationalVersion: '6'
+          paramOverwriteFourthDigitWithBuildCounter: false
+          paramVersionCode: '2'
+          doAssemblyInfoAppendSuffix: false
+          doConvertAssemblyInfoToLowerCase: true
+          buildNumberVersionFormat: '3'
+          buildNumberAction: 'replace'
+          doReplaceAssemblyInfo: false
+          doReplaceNuspec: false
+          doReplaceNpm: false
+          doReplaceDotNetCore: true
+          filePatternDotNetCore: |
+            **\*.csproj
+            **\*.props
+          paramDotNetCoreVersionType: '3'
+          doReplaceAndroid: false
+          doReplaceiOS: false
+          doReplaceCustom: false
+          doShowWarningsForUnmatchedRegex: false
+          excludeFilePattern: |
+            !**/bin/**
+            !**/obj/**
+            !**/node_modules/**
+            !**/packages/**
+      - task: CopyFiles@2
+        displayName: "Copy props from repo root to docker context root"
+        inputs:
+          Contents: |
+            *.props
+            *.ruleset
+          TargetFolder: '$(BuildContext)'
+
+    # - template: pipeline/build-and-deploy-image.yml
+      - task: Docker@1
+        displayName: 'Build an image'
+        inputs:
+          containerregistrytype: 'Azure Container Registry'
+          azureSubscriptionEndpoint: '$(AzureSubscription)'
+          azureContainerRegistry: '$(AzureContainerRegistry)'
+          command: 'Build an image'
+          dockerFile: '$(DockerFile)'
+          arguments: '--build-arg PAT=$(PatProductsFeed)'
+          imageName: '$(ImageName):$(Build.BuildNumber)'
+          useDefaultContext: false
+          buildContext: '$(BuildContext)'
+      - pwsh: |
+          $id=docker images --filter "label=test=true" -q | Select-Object -First 1
+          docker create --name testcontainer $id
+          docker cp testcontainer:/testresults ./testresults
+          docker rm testcontainer
+        displayName: 'Copy test results'
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: 'VSTest'
+          testResultsFiles: '**/*.trx'
+          searchFolder: '$(System.DefaultWorkingDirectory)/testresults'
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          codeCoverageTool: 'Cobertura'
+          summaryFileLocation: '$(System.DefaultWorkingDirectory)/testresults/coverage/coverage.cobertura.xml'
+          reportDirectory: '$(System.DefaultWorkingDirectory)/testresults/coverage/reports'
+      - task: Docker@1
+        displayName: 'Push an image'
+        inputs:
+          azureSubscriptionEndpoint: $(AzureSubscription)
+          azureContainerRegistry: $(AzureContainerRegistry)
+          command: 'Push an image'
+          imageName: '$(ImageName):$(Build.BuildNumber)'
+
+    # - template: pipeline/package-helm.yml
+      - task: CopyFiles@2
+        displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)/$(ArtifactName)'
+        inputs:
+          SourceFolder: $(ArtifactSourceFolder)
+          Contents: values.release.yaml
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/$(ArtifactName)'
+      - task: HelmInstaller@0
+        displayName: 'Install Helm $(HelmVersion)'
+        inputs:
+          helmVersion: '$(HelmVersion)'
+          checkLatestHelmVersion: false
+          installKubectl: true
+      - task: HelmDeploy@0
+        displayName: 'helm package'
+        inputs:
+          azureSubscription: $(AzureSubscription)
+          azureResourceGroup: $(AzureResourceGroup)
+          kubernetesCluster: $(KubernetesCluster)
+          command: package
+          chartPath: $(ChartPath)
+          destination: '$(Build.ArtifactStagingDirectory)/$(ArtifactName)'
+          chartVersion: '$(Build.BuildNumber)'
+          save: false
+
+    # - template: pipeline/publish-artifacts.yml
+      - publish: '$(Build.ArtifactStagingDirectory)/$(ArtifactName)'
+        artifact: '$(ArtifactName)'
+        displayName: 'Publish Artifact: $(ArtifactName)'
+
+
+  - job: DB_Build
+    displayName: 'Build the DB Schema'
+    pool:
+      #vmImage: windows-latest
+      name: Default
+      demands:
+      - msbuild
+      - visualstudio
+    variables:
+      BuildPlatform: 'Any CPU'
+      BuildConfiguration: release
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          $uri = "https://github.com/4tecture/SSDTDataMigration/releases/download/untagged-8c8c5eae85e1f1e33b69/4tecture.CustomSSDTMigrationScripts.msi"
+          $out = "c:\4tecture.CustomSSDTMigrationScripts.msi"
+          Invoke-WebRequest -uri $uri -OutFile $out
+          Start-Process -FilePath "msiexec.exe" -ArgumentList "/i $out /quiet /norestart /l c:\installlog.txt" -wait
+    - task: VSBuild@1
+      displayName: 'Build solution DevFun.Api/DevFun.DB/DevFun.DB.sqlproj'
+      inputs:
+        solution: DevFun.Api/DevFun.DB/DevFun.DB.sqlproj
+        platform: '$(BuildPlatform)'
+        configuration: '$(BuildConfiguration)'
+    - publish: DevFun.Api/DevFun.DB/bin/Output
+      artifact: Database
+      displayName: 'Publish Artifact: Database' 
+
+  - job: DataInitializer_Build
+    displayName: 'Build the Test Data Initializer'
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    variables:
+      PublishRuntime: linux-x64
+      PublishFolder: linux
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish Linux'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: DevFun.DataInitializer/DevFun.DataInitializer.sln
+        arguments: '--output $(Build.ArtifactStagingDirectory)/linux --self-contained --configuration release --runtime linux-x64'
+        zipAfterPublish: false
+        modifyOutputPath: false
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish Windows'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: DevFun.DataInitializer/DevFun.DataInitializer.sln
+        arguments: '--output $(Build.ArtifactStagingDirectory)/windows --self-contained --configuration release --runtime win10-x64'
+        zipAfterPublish: false
+        modifyOutputPath: false
+    - publish: $(Build.ArtifactStagingDirectory)
+      artifact: TestDataInitializer
+      displayName: 'Publish Artifact: TestDataInitializer'
+
+- stage: PR
+  dependsOn: Build
+  condition: and(succeeded('Build'), eq(variables['Build.Reason'], 'PullRequest')) 
+  variables:
+    k8sNamespace: 'dev'
+    dbname: 'dynamic'
+    CertIssuer: 'letsencrypt-cluster-staging'
+    DeploymentEnvironment: 'PR Build'
+  jobs:
+  - deployment: PR
+    displayName: 'Deploy DevFun API to the $(k8sNamespace) environment'
+    environment: devfun-api-pr
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - pwsh: |
+                $prId = [regex]::match('$(Build.SourceBranch)','(refs/pull/)(\d*)(/merge)').Groups[2].Value
+                Write-Host "##vso[task.setvariable variable=prId;]$prId"
+                Write-Host "##vso[task.setvariable variable=HelmReleaseName;]devfunapi-pr$($prId)"
+                Write-Host "##vso[task.setvariable variable=IngressHostName;]api.devfun.pr-$($prId).demo.4tecture.ch"
+                Write-Host "##vso[task.setvariable variable=TlsSecretName;]devfunapi-pr$($prId)-tls"
+                $dbname = "devfun-pr$($prId)"
+                Write-Host "##vso[task.setvariable variable=dbname;]$dbname"
+                Write-Host "##vso[task.setvariable variable=ConnectionString;]Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$dbname;Persist Security Info=False;User ID=$(dbuser);Password=$env:DBPASSWORD;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+                Write-Host "##vso[task.setvariable variable=k8sNamespace;]pr-$($prId)"
+            env:
+              DBPASSWORD: $(dbpassword)
+            displayName: 'Define PR related Variables'
+          - task: Kubernetes@1
+            displayName: 'Create Namespace for PR'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              command: 'apply'
+              useConfigurationFile: true
+              configurationType: 'inline'
+              inline: |
+                kind: Namespace
+                apiVersion: v1
+                metadata:
+                  name: $(k8snamespace)
+                spec: {}
+                status: {}
+              secretType: 'dockerRegistry'
+              containerRegistryType: 'Azure Container Registry'
+          - task: Kubernetes@1
+            displayName: Add pull secret to namespace
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              namespace: '$(k8snamespace)'
+              command: 'get'
+              arguments: 'namespace $(k8snamespace)'
+              secretType: 'dockerRegistry'
+              containerRegistryType: 'Azure Container Registry'
+              azureSubscriptionEndpointForSecrets: '$(AzureSubscription)'
+              azureContainerRegistry: '$(AzureContainerRegistry)'
+              secretName: 'acrauth'
+          - pwsh: |
+                Write-Host "##vso[task.setvariable variable=ConnectionString;]Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$(dbname);Persist Security Info=False;User ID=$(dbuser);Password=$env:DBPASSWORD;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+            env:
+              DBPASSWORD: $(dbpassword)
+            displayName: 'Define ConnectionString'
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(AzureSubscription)'
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                $existing = az sql db show --name $(dbname) --server $(dbservername) --resource-group $(dbresourcegroup)
+                if($existing)
+                {
+                    Write-Host "##vso[task.setvariable variable=databaseAlreadyExisted;]true"
+                }
+                else
+                {
+                    az sql db create --name $(dbname) --elastic-pool $(elasticpoolname) --server $(dbservername) --resource-group $(dbresourcegroup)
+                }
+              failOnStandardError: false
+          - task: SqlAzureDacpacDeployment@1
+            displayName: 'Azure SQL DacpacTask'
+            inputs:
+              azureSubscription: '$(AzureSubscription)'
+              ServerName: '$(dbservernamefqdn)'
+              DatabaseName: '$(dbname)'
+              SqlUsername: '$(dbuser)'
+              SqlPassword: '$(dbpassword)'
+              DacpacFile: '$(Pipeline.Workspace)/Database/DevFun.DB.dacpac'
+              AdditionalArguments: '/p:GenerateSmartDefaults=True /p:AllowIncompatiblePlatform=True'
+          - task: Tokenizer@0
+            displayName: Tokenizer
+            inputs:
+              sourceFilesPattern: '$(Pipeline.Workspace)/DevFunApi/values.release.yaml'
+          - task: HelmInstaller@0
+            displayName: 'Install Helm $(HelmVersion)'
+            inputs:
+              helmVersion: '$(HelmVersion)'
+              checkLatestHelmVersion: false
+              installKubectl: true
+          - task: HelmDeploy@0
+            displayName: 'helm upgrade'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              namespace: '$(k8sNamespace)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/DevFunApi/devfunapi-$(Build.BuildNumber).tgz'
+              releaseName: '$(HelmReleaseName)'
+              overrideValues: 'buildID=$(Build.BuildNumber)'
+              valueFile: '$(Pipeline.Workspace)/DevFunApi/values.release.yaml'
+          - pwsh: |
+              start-sleep -s 20                
+              start-process -FilePath $(Pipeline.Workspace)/TestDataInitializer/windows/DevFun.DataInitializer.exe -ArgumentList "--service https://$(IngressHostName)" -NoNewWindow -wait
+            displayName: 'Run DataInitializer'
+
+- stage: DeletePR
+  dependsOn: PR
+  condition: succeeded('PR')
+  variables:
+    k8sNamespace: 'dev'
+    dbname: 'dynamic'
+    CertIssuer: 'letsencrypt-cluster-staging'
+    DeploymentEnvironment: 'PR Build'
+  jobs:
+  - deployment: DeletePR
+    displayName: 'Delete DevFun API from the $(k8sNamespace) environment'
+    environment: devfun-api-pr-delete
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - pwsh: |
+              $prId = [regex]::match('$(Build.SourceBranch)','(refs/pull/)(\d*)(/merge)').Groups[2].Value
+              Write-Host "##vso[task.setvariable variable=prId;]$prId"
+              Write-Host "##vso[task.setvariable variable=HelmReleaseName;]devfunapi-pr$($prId)"
+              Write-Host "##vso[task.setvariable variable=IngressHostName;]api.devfun.pr-$($prId).demo.4tecture.ch"
+              Write-Host "##vso[task.setvariable variable=TlsSecretName;]devfunapi-pr$($prId)-tls"
+              $dbname = "devfun-pr$($prId)"
+              Write-Host "##vso[task.setvariable variable=dbname;]$dbname"
+              Write-Host "##vso[task.setvariable variable=ConnectionString;]Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$dbname;Persist Security Info=False;User ID=$(dbuser);Password=$env:DBPASSWORD;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+              Write-Host "##vso[task.setvariable variable=k8sNamespace;]pr-$($prId)"
+            env:
+              DBPASSWORD: $(dbpassword)
+            displayName: 'Define PR related Variables'
+          - task: HelmInstaller@0
+            displayName: 'Install Helm $(HelmVersion)'
+            inputs:
+              helmVersion: '$(HelmVersion)'
+              checkLatestHelmVersion: false
+              installKubectl: true
+          - task: HelmDeploy@0
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              namespace: '$(k8sNamespace)'
+              command: 'uninstall'
+              arguments: '$(HelmReleaseName)'
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(AzureSubscription)'
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: 'az sql db delete --name $(dbname) --server $(dbservername) --resource-group $(dbresourcegroup)'
+          - task: Kubernetes@1
+            displayName: 'kubectl delete'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscriptionEndpoint: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              command: 'delete'
+              arguments: 'namespaces $(k8sNamespace)'
+              secretType: 'dockerRegistry'
+              containerRegistryType: 'Azure Container Registry'
+
+
+- stage: Staging
+  dependsOn: Build
+  condition: and(succeeded('Build'), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  variables:
+    k8sNamespace: 'staging'
+    dbname: 'devfun-staging'
+    CertIssuer: 'letsencrypt-cluster'
+    DeploymentEnvironment: 'Staging'
+    ConnectionString: 'Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$(dbname);Persist Security Info=False;User ID=$(dbuser);Password=$(dbpassword);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+  jobs:
+  - deployment: Staging
+    displayName: 'Deploy DevFun API to the $(k8sNamespace) environment'
+    environment: devfun-api-staging
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: SqlAzureDacpacDeployment@1
+            displayName: 'Azure SQL DacpacTask'
+            inputs:
+              azureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+              ServerName: '$(dbservernamefqdn)'
+              DatabaseName: '$(dbname)'
+              SqlUsername: '$(dbuser)'
+              SqlPassword: '$(dbpassword)'
+              DacpacFile: '$(Pipeline.Workspace)/Database/DevFun.DB.dacpac'
+              AdditionalArguments: '/p:GenerateSmartDefaults=True /p:AllowIncompatiblePlatform=True'
+          - task: Tokenizer@0
+            displayName: Tokenizer
+            inputs:
+              sourceFilesPattern: '$(Pipeline.Workspace)/DevFunApi/values.release.yaml'
+              tokenIdentifierRegex: '(__)(\S*)(__)'
+          - task: HelmInstaller@0
+            displayName: 'Install Helm $(HelmVersion)'
+            inputs:
+              helmVersion: '$(HelmVersion)'
+              checkLatestHelmVersion: false
+              installKubectl: true
+          - task: HelmDeploy@0
+            displayName: 'helm upgrade'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: '$(AzureSubscription)'
+              azureResourceGroup: $(AzureResourceGroup)
+              kubernetesCluster: $(KubernetesCluster)
+              useClusterAdmin: true
+              namespace: '$(k8sNamespace)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/DevFunApi/devfunapi-$(Build.BuildNumber).tgz'
+              releaseName: '$(HelmReleaseName)'
+              valueFile: '$(Pipeline.Workspace)/DevFunApi/values.release.yaml'
+
+- stage: Prod
+  dependsOn: Staging
+  condition: succeeded('Staging')
+  variables:
+    k8sNamespace: 'prod'
+    dbname: 'devfun-prod'
+    CertIssuer: 'letsencrypt-cluster'
+    DeploymentEnvironment: 'Production'
+    ConnectionString: 'Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$(dbname);Persist Security Info=False;User ID=$(dbuser);Password=$(dbpassword);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+  jobs:
+  - deployment: Prod
+    displayName: 'Deploy DevFun API to the $(k8sNamespace) environment'
+    environment: devfun-api-prod
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: SqlAzureDacpacDeployment@1
+            displayName: 'Azure SQL DacpacTask'
+            inputs:
+              azureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+              ServerName: '$(dbservernamefqdn)'
+              DatabaseName: '$(dbname)'
+              SqlUsername: '$(dbuser)'
+              SqlPassword: '$(dbpassword)'
+              DacpacFile: '$(Pipeline.Workspace)/Database/DevFun.DB.dacpac'
+              AdditionalArguments: '/p:GenerateSmartDefaults=True /p:AllowIncompatiblePlatform=True'
+          - task: Tokenizer@0
+            displayName: Tokenizer
+            inputs:
+              sourceFilesPattern: '$(Pipeline.Workspace)/DevFunApi/values.release.yaml'
+              tokenIdentifierRegex: '(__)(\S*)(__)'
+          - task: HelmInstaller@0
+            displayName: 'Install Helm $(HelmVersion)'
+            inputs:
+              helmVersion: '$(HelmVersion)'
+              checkLatestHelmVersion: false
+              installKubectl: true
+          - task: HelmDeploy@0
+            displayName: 'helm upgrade'
+            inputs:
+              connectionType: 'Azure Resource Manager'
+              azureSubscription: '$(AzureSubscription)'
+              azureResourceGroup: '$(AzureResourceGroup)'
+              kubernetesCluster: '$(KubernetesCluster)'
+              useClusterAdmin: true
+              namespace: '$(k8sNamespace)'
+              command: 'upgrade'
+              chartType: 'FilePath'
+              chartPath: '$(Pipeline.Workspace)/DevFunApi/devfunapi-$(Build.BuildNumber).tgz'
+              releaseName: '$(HelmReleaseName)'
+              valueFile: '$(Pipeline.Workspace)/DevFunApi/values.release.yaml'

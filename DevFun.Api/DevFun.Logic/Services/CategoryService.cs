@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using _4tecture.DataAccess.Common.Repositories;
 using _4tecture.DataAccess.Common.Storages;
 using DevFun.Common.Entities;
 using DevFun.Common.Repositories;
@@ -11,70 +10,59 @@ using Microsoft.Extensions.Logging;
 
 namespace DevFun.Logic.Services
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("AsyncUsage", "AsyncFixer01:Unnecessary async/await usage", Justification = "because of the using and Task<>, the object is disposed too early when not using async/await in combination with using")]
     public class CategoryService : ICategoryService
     {
-        public IStorageFactory<IDevFunStorage> StorageFactory { get; private set; }
-        public ILogger Logger { get; private set; }
+        private readonly IStorageFactory<IDevFunStorage> storageFactory;
+        private readonly ILogger<CategoryService> logger;
 
         public CategoryService(
             IStorageFactory<IDevFunStorage> storageFactory,
             ILogger<CategoryService> logger)
         {
-            this.StorageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
-            this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.storageFactory = storageFactory ?? throw new ArgumentNullException(nameof(storageFactory));
+            this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public Task<IEnumerable<Category>> GetCategories()
+        public async Task<IPagedEnumerable<Category>> GetAll(QueryFilter<Category> queryFilter = null, TrackingBehavior trackingBehavior = TrackingBehavior.Tracking)
         {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<ICategoryRepository>();
-                var result = repo.GetAll().ToList();
-                return Task.FromResult(result.AsEnumerable<Category>());
-            }
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<ICategoryRepository>();
+            return await repo.GetAll(queryFilter, trackingBehavior).ConfigureAwait(false);
         }
 
-        public Task<Category> GetCategoryById(int id)
+        public async Task<Category> GetById(int id, TrackingBehavior trackingBehavior = TrackingBehavior.Tracking)
         {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<ICategoryRepository>();
-                var result = repo.GetById(id);
-                return Task.FromResult(result);
-            }
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<ICategoryRepository>();
+            return await repo.GetById(id, trackingBehavior).ConfigureAwait(false);
         }
 
         public async Task<Category> Create(Category category)
         {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<ICategoryRepository>();
-                var result = repo.AddDetached(category);
-                await session.SaveChanges();
-                return result;
-            }
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<ICategoryRepository>();
+            var result = await repo.AddDetached(category).ConfigureAwait(false);
+            await session.SaveChanges().ConfigureAwait(false);
+            return result;
         }
 
         public async Task<Category> Update(Category category)
         {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<ICategoryRepository>();
-                var result = repo.UpdateDetached(category);
-                await session.SaveChanges();
-                return result;
-            }
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<ICategoryRepository>();
+            var result = await repo.UpdateDetached(category).ConfigureAwait(false);
+            await session.SaveChanges().ConfigureAwait(false);
+            return result;
         }
 
         public async Task<Category> Delete(int id)
         {
-            using (var session = StorageFactory.CreateStorageSession())
-            {
-                var repo = session.ResolveRepository<ICategoryRepository>();
-                var result = repo.Delete(id);
-                await session.SaveChanges();
-                return result;
-            }
+            using var session = storageFactory.CreateStorageSession();
+            var repo = session.ResolveRepository<ICategoryRepository>();
+            var result = await repo.Delete(id).ConfigureAwait(false);
+            await session.SaveChanges().ConfigureAwait(false);
+            return result;
         }
     }
 }

@@ -1,18 +1,25 @@
 ﻿using _4tecture.DataAccess.EntityFramework.Storages;
 using DevFun.Common.Entities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DevFun.Storage.EntityConfigurations
 {
     public class DevJokeConfiguration : RelationalEntityConfigurationBase<DevJoke>
     {
+        public DevJokeConfiguration(ISchemaManager schemaManager)
+            : base(schemaManager)
+        {
+        }
+
+        protected override string TableName => nameof(DevJoke);
 
         protected override void ConfigureEntity(EntityTypeBuilder<DevJoke> entity)
         {
+            if (entity is null)
+            {
+                throw new System.ArgumentNullException(nameof(entity));
+            }
+
             // Key
             entity.HasKey(e => e.Id);
 
@@ -23,14 +30,10 @@ namespace DevFun.Storage.EntityConfigurations
             entity.Property(e => e.Tags);
             entity.Property(e => e.LikeCount);
 
+            // FK
+
             // Relations
             entity.HasOne(e => e.Category).WithMany();
-
-        }
-
-        protected override void ConfigureTableMapping(EntityTypeBuilder entityTypeBuilder)
-        {
-            entityTypeBuilder.ToTable("DevJoke");
         }
     }
 }

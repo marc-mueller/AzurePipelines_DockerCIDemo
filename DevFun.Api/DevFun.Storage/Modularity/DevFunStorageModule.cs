@@ -6,9 +6,6 @@ using _4tecture.Modularity.Common;
 using DevFun.Common.Storages;
 using DevFun.Storage.EntityConfigurations;
 using DevFun.Storage.Storages;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DevFun.Storage.Modularity
 {
@@ -27,16 +24,19 @@ namespace DevFun.Storage.Modularity
             serviceCollection.AddTransient<IStorageFactory<IDevFunStorage>, StorageFactory<DevFunStorage>>();
             serviceCollection.AddTransient<IStorageFactory<DevFunStorage>, StorageFactory<DevFunStorage>>();
 
-            
-
             return serviceCollection;
         }
     }
 
     public static class ModuleCatalogExtensions
     {
-        public static IModuleCatalog AddDevFunStorageModule(this IModuleCatalog moduleCatalog)
+        public static IModuleCatalogCollection AddDevFunStorageModule(this IModuleCatalogCollection moduleCatalog)
         {
+            if (moduleCatalog is null)
+            {
+                throw new System.ArgumentNullException(nameof(moduleCatalog));
+            }
+
             moduleCatalog.AddModule("DevFunStorageModule", new DevFunStorageModule());
             return moduleCatalog;
         }

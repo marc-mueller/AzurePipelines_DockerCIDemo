@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "devfunweb.fullname" . }}
@@ -18,6 +18,8 @@ spec:
       labels:
         app: {{ template "devfunweb.name" . }}
         release: {{ .Release.Name }}
+      annotations:
+        buildID: {{ .Values.buildID | quote }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
