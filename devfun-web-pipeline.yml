@@ -328,8 +328,9 @@ stages:
               namespace: '$(k8sNamespace)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/DevFunWeb/devfunweb-*.tgz'
+              chartPath: '$(Pipeline.Workspace)/DevFunWeb/devfunweb-$(Build.BuildNumber).tgz'
               releaseName: '$(HelmReleaseName)'
+              overrideValues: 'buildID=$(Build.BuildNumber)'
               valueFile: '$(Pipeline.Workspace)/DevFunWeb/values.release.yaml'
 
 - stage: Prod
@@ -371,6 +372,7 @@ stages:
               namespace: '$(k8sNamespace)'
               command: 'upgrade'
               chartType: 'FilePath'
-              chartPath: '$(Pipeline.Workspace)/DevFunWeb/devfunweb-*.tgz'
+              chartPath: '$(Pipeline.Workspace)/DevFunWeb/devfunweb-$(Build.BuildNumber).tgz'
               releaseName: '$(HelmReleaseName)'
+              overrideValues: 'buildID=$(Build.BuildNumber)'
               valueFile: '$(Pipeline.Workspace)/DevFunWeb/values.release.yaml'
