@@ -1,6 +1,12 @@
 name : DevFunWeb
 trigger:
-- master
+  branches:
+    include:
+      - master
+      - releases/*
+  paths:
+    include:
+      - DevFun.Web/*
 variables:
   AzureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
   AzureContainerRegistry: 4tk8sdemoacr.azurecr.io
