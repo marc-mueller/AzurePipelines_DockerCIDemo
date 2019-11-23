@@ -11,12 +11,12 @@ steps:
     useConfigurationFile: true
     configurationType: 'inline'
     inline: |
-    kind: Namespace
-    apiVersion: v1
-    metadata:
+      kind: Namespace
+      apiVersion: v1
+      metadata:
         name: $(k8snamespace)
-    spec: {}
-    status: {}
+      spec: {}
+      status: {}
     secretType: 'dockerRegistry'
     containerRegistryType: 'Azure Container Registry'
 - task: Kubernetes@1

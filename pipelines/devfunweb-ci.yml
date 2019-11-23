@@ -29,6 +29,6 @@ stages:
       ArtifactSourceFolder: DevFun.Web/DevFun.Web
       ArtifactName: DevFunWeb
     steps:
-      - template: pipelines/templates/buildVersioning.yml
-      - template: pipelines/templates/buildAndPublishDockerImage.yml
-      - template: pipelines/templates/createHelmPackage.yml
+      - template: templates/buildVersioning.yml
+      - template: templates/buildAndPublishDockerImage.yml
+      - template: templates/createHelmPackage.yml

@@ -7,7 +7,7 @@ steps:
       *.ruleset
     TargetFolder: '$(BuildContext)'
 - task: Docker@1
-  displayName: 'Build an image'
+  displayName: 'Build the docker image'
   inputs:
     containerregistrytype: 'Azure Container Registry'
     azureSubscriptionEndpoint: '$(AzureSubscription)'
@@ -29,13 +29,15 @@ steps:
     testResultsFormat: 'VSTest'
     testResultsFiles: '**/*.trx'
     searchFolder: '$(System.DefaultWorkingDirectory)/testresults'
+  displayName: 'Publish test results'
 - task: PublishCodeCoverageResults@1
   inputs:
     codeCoverageTool: 'Cobertura'
     summaryFileLocation: '$(System.DefaultWorkingDirectory)/testresults/coverage/coverage.cobertura.xml'
     reportDirectory: '$(System.DefaultWorkingDirectory)/testresults/coverage/reports'
+  displayName: 'Publish code coverage results'
 - task: Docker@1
-  displayName: 'Push an image'
+  displayName: 'Push the docker image to the registry'
   inputs:
     azureSubscriptionEndpoint: $(AzureSubscription)
     azureContainerRegistry: $(AzureContainerRegistry)

@@ -35,7 +35,7 @@ stages:
       name: Default
     steps:
       - checkout: none
-      - template: pipelines/templates/releaseInitialization.yml
+      - template: templates/releaseInitialization.yml
 
 - stage: PR
   dependsOn: InitializeRelease
@@ -59,9 +59,9 @@ stages:
           steps:
           - download: CIBuild
             artifact: DevFunWeb
-          - template: pipelines/templates/definePrVariables.yml
-          - template: pipelines/templates/setupK8sPrEnvironment.yml
-          - template: pipelines/templates/deployHelmPackage.yml
+          - template: templates/defineWebPrVariables.yml
+          - template: templates/setupK8sPrEnvironment.yml
+          - template: templates/deployHelmPackage.yml
 - stage: DeletePR
   dependsOn: PR
   condition: succeeded('PR')
@@ -81,8 +81,8 @@ stages:
         deploy:
           steps:
           - download: none
-          - template: pipelines/templates/definePrVariables.yml
-          - template: pipelines/templates/deleteK8sPrEnvironment.yml
+          - template: templates/defineWebPrVariables.yml
+          - template: templates/deleteK8sPrEnvironment.yml
 
 
 - stage: Staging
@@ -105,7 +105,7 @@ stages:
           steps:
           - download: CIBuild
             artifact: DevFunWeb
-          - template: pipelines/templates/deployHelmPackage.yml
+          - template: templates/deployHelmPackage.yml
 
 - stage: Prod
   dependsOn: Staging
@@ -127,4 +127,4 @@ stages:
           steps:
           - download: CIBuild
             artifact: DevFunWeb
-          - template: pipelines/templates/deployHelmPackage.yml
+          - template: templates/deployHelmPackage.yml

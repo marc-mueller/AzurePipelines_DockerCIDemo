@@ -1,0 +1,184 @@
+name : DevFunApi-CD
+trigger: none
+resources:
+ pipelines:
+   - pipeline: CIBuild
+     source: DevFunApi-CI
+     trigger:
+      branches:
+       include:
+         - master
+         - feature/*
+         - pull/*
+         - refs/pull/*
+variables:
+  AzureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+  AzureContainerRegistry: 4tk8sdemoacr.azurecr.io
+  AzureResourceGroup: 'k8sDemo'
+  KubernetesCluster: 'aks2376'
+  dbresourcegroup: 'dbDemo'
+  dbservername: '4tdbdemoserver'
+  dbservernamefqdn: '$(dbservername).database.windows.net'
+  dbuser: 'dbadmin'
+  # dbpassword: <secret>
+  elasticpoolname: 'dbdemopool'
+  HelmReleaseName: 'devfunapi-$(k8sNamespace)'
+  ImageName: '$(AzureContainerRegistry)/devfunapi'
+  IngressHostName: 'api.devfun.$(k8sNamespace).demo.4tecture.ch'
+  ReplicaCount: 3
+  TlsSecretName: 'devfunapi-tls'
+  ConnectionString: 'Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$(dbname);Persist Security Info=False;User ID=$(dbuser);Password=$(dbpassword);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+  HelmVersion: '3.0.0'
+  ReleaseValuesFile: '$(Pipeline.Workspace)/CIBuild/DevFunApi/values.release.yaml'
+  ChartPackage: '$(Pipeline.Workspace)/CIBuild/DevFunApi/devfunapi-$(RESOURCES.PIPELINE.CIBUILD.RUNNAME).tgz'
+  DacpacFile: '$(Pipeline.Workspace)/CIBuild/Database/DevFun.DB.dacpac'
+  ReleaseRevision: $[counter(variables['RESOURCES.PIPELINE.CIBUILD.RUNNAME'], 1)]
+stages:
+- stage: InitializeRelease
+  jobs:
+  - job: InitializeRelease
+    pool:
+      name: Default
+    steps:
+      - checkout: none
+      - template: templates/releaseInitialization.yml
+
+- stage: PR
+  dependsOn: InitializeRelease
+  condition: and(succeeded('InitializeRelease'), startsWith(variables['RESOURCES.PIPELINE.CIBUILD.SOURCEBRANCH'], 'refs/pull/')) 
+  variables:
+    k8sNamespace: 'dev'
+    dbname: 'dynamic'
+    CertIssuer: 'letsencrypt-cluster-staging'
+    DeploymentEnvironment: 'PR Build'
+  jobs:
+  - deployment: PR
+    displayName: 'Deploy DevFun API to the $(k8sNamespace) environment'
+    environment: devfun-api-pr
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: CIBuild
+            displayName: 'Download artifacts'
+          - template: templates/defineApiPrVariables.yml
+          - template: templates/setupK8sPrEnvironment.yml
+          - pwsh: |
+                Write-Host "##vso[task.setvariable variable=ConnectionString;]Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$(dbname);Persist Security Info=False;User ID=$(dbuser);Password=$env:DBPASSWORD;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+            env:
+              DBPASSWORD: $(dbpassword)
+            displayName: 'Define ConnectionString'
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(AzureSubscription)'
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                $existing = az sql db show --name $(dbname) --server $(dbservername) --resource-group $(dbresourcegroup)
+                if($existing)
+                {
+                    Write-Host "##vso[task.setvariable variable=databaseAlreadyExisted;]true"
+                }
+                else
+                {
+                    az sql db create --name $(dbname) --elastic-pool $(elasticpoolname) --server $(dbservername) --resource-group $(dbresourcegroup)
+                }
+              failOnStandardError: false
+          - task: SqlAzureDacpacDeployment@1
+            displayName: 'Azure SQL DacpacTask'
+            inputs:
+              azureSubscription: '$(AzureSubscription)'
+              ServerName: '$(dbservernamefqdn)'
+              DatabaseName: '$(dbname)'
+              SqlUsername: '$(dbuser)'
+              SqlPassword: '$(dbpassword)'
+              DacpacFile: '$(Pipeline.Workspace)/Database/DevFun.DB.dacpac'
+              AdditionalArguments: '/p:GenerateSmartDefaults=True /p:AllowIncompatiblePlatform=True'
+          - template: templates/deployHelmPackage.yml
+          - pwsh: |
+              start-sleep -s 20                
+              start-process -FilePath $(Pipeline.Workspace)/TestDataInitializer/windows/DevFun.DataInitializer.exe -ArgumentList "--service https://$(IngressHostName)" -NoNewWindow -wait
+            displayName: 'Run DataInitializer'
+
+- stage: DeletePR
+  dependsOn: PR
+  condition: succeeded('PR')
+  variables:
+    k8sNamespace: 'dev'
+    dbname: 'dynamic'
+    CertIssuer: 'letsencrypt-cluster-staging'
+    DeploymentEnvironment: 'PR Build'
+  jobs:
+  - deployment: DeletePR
+    displayName: 'Delete DevFun API from the $(k8sNamespace) environment'
+    environment: devfun-api-pr-delete
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: none
+          - template: templates/defineApiPrVariables.yml
+          - template: templates/deleteK8sPrEnvironment.yml
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(AzureSubscription)'
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: 'az sql db delete --name $(dbname) --server $(dbservername) --resource-group $(dbresourcegroup)'
+
+
+- stage: Staging
+  dependsOn: InitializeRelease
+  condition: and(succeeded('InitializeRelease'), startsWith(variables['RESOURCES.PIPELINE.CIBUILD.SOURCEBRANCH'], 'refs/heads/master'))
+  variables:
+    k8sNamespace: 'staging'
+    dbname: 'devfun-staging'
+    CertIssuer: 'letsencrypt-cluster'
+    DeploymentEnvironment: 'Staging'
+    ConnectionString: 'Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$(dbname);Persist Security Info=False;User ID=$(dbuser);Password=$(dbpassword);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+  jobs:
+  - deployment: Staging
+    displayName: 'Deploy DevFun API to the $(k8sNamespace) environment'
+    environment: devfun-api-staging
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: CIBuild
+            displayName: 'Download artifacts'
+          - template: templates/deployDacPac.yml
+          - template: templates/deployHelmPackage.yml
+
+- stage: Prod
+  dependsOn: Staging
+  condition: succeeded('Staging')
+  variables:
+    k8sNamespace: 'prod'
+    dbname: 'devfun-prod'
+    CertIssuer: 'letsencrypt-cluster'
+    DeploymentEnvironment: 'Production'
+    ConnectionString: 'Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$(dbname);Persist Security Info=False;User ID=$(dbuser);Password=$(dbpassword);MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
+  jobs:
+  - deployment: Prod
+    displayName: 'Deploy DevFun API to the $(k8sNamespace) environment'
+    environment: devfun-api-prod
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: CIBuild
+            displayName: 'Download artifacts'
+          - template: templates/deployDacPac.yml
+          - template: templates/deployHelmPackage.yml

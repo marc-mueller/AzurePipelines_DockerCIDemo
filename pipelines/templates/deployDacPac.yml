@@ -1,0 +1,11 @@
+steps:
+- task: SqlAzureDacpacDeployment@1
+  displayName: 'Azure SQL DacpacTask'
+  inputs:
+    azureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+    ServerName: '$(dbservernamefqdn)'
+    DatabaseName: '$(dbname)'
+    SqlUsername: '$(dbuser)'
+    SqlPassword: '$(dbpassword)'
+    DacpacFile: '$(DacpacFile)'
+    AdditionalArguments: '/p:GenerateSmartDefaults=True /p:AllowIncompatiblePlatform=True'

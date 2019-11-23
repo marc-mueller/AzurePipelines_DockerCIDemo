@@ -1,6 +1,6 @@
 steps:
 - task: Tokenizer@0
-  displayName: Tokenizer
+  displayName: 'Run Tokenizer'
   inputs:
     sourceFilesPattern: '$(ReleaseValuesFile)'
 - task: HelmInstaller@0
@@ -10,7 +10,7 @@ steps:
     checkLatestHelmVersion: false
     installKubectl: true
 - task: HelmDeploy@0
-  displayName: 'helm upgrade'
+  displayName: 'Helm upgrade release'
   inputs:
     connectionType: 'Azure Resource Manager'
     azureSubscription: '$(AzureSubscription)'

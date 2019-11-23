@@ -1,0 +1,96 @@
+name : DevFunApi-CI
+trigger:
+  branches:
+    include:
+      - master
+      - releases/*
+  paths:
+    include:
+      - DevFun.Api/*
+variables:
+  AzureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+  AzureContainerRegistry: 4tk8sdemoacr.azurecr.io
+  AzureResourceGroup: 'k8sDemo'
+  KubernetesCluster: 'aks2376'
+  ImageName: '$(AzureContainerRegistry)/devfunapi'
+  HelmVersion: '3.0.0'
+stages:
+- stage: Build
+  jobs:
+  - job: CI_Build
+    displayName: 'Build the Api'
+    pool:
+      vmImage: 'ubuntu-latest'
+      #name: Default
+    variables:
+      DockerFile: DevFun.Api/DevFun.Api/Dockerfile
+      BuildContext: DevFun.Api
+      ChartPath: DevFun.Api/DevFun.Api/charts/devfunapi
+      ArtifactSourceFolder: DevFun.Api/DevFun.Api
+      ArtifactName: DevFunApi
+    steps:
+    - template: templates/buildVersioning.yml
+    - template: templates/buildAndPublishDockerImage.yml
+    - template: templates/createHelmPackage.yml
+
+  - job: DB_Build
+    displayName: 'Build the DB Schema'
+    pool:
+      #vmImage: windows-latest
+      name: Default
+      demands:
+      - msbuild
+      - visualstudio
+    variables:
+      BuildPlatform: 'Any CPU'
+      BuildConfiguration: release
+    steps:
+    - task: PowerShell@2
+      inputs:
+        targetType: 'inline'
+        script: |
+          $uri = "https://github.com/4tecture/SSDTDataMigration/releases/download/untagged-8c8c5eae85e1f1e33b69/4tecture.CustomSSDTMigrationScripts.msi"
+          $out = "c:\4tecture.CustomSSDTMigrationScripts.msi"
+          Invoke-WebRequest -uri $uri -OutFile $out
+          Start-Process -FilePath "msiexec.exe" -ArgumentList "/i $out /quiet /norestart /l c:\installlog.txt" -wait
+    - task: VSBuild@1
+      displayName: 'Build solution DevFun.Api/DevFun.DB/DevFun.DB.sqlproj'
+      inputs:
+        solution: DevFun.Api/DevFun.DB/DevFun.DB.sqlproj
+        platform: '$(BuildPlatform)'
+        configuration: '$(BuildConfiguration)'
+    - publish: DevFun.Api/DevFun.DB/bin/Output
+      artifact: Database
+      displayName: 'Publish Artifact: Database' 
+
+  - job: DataInitializer_Build
+    displayName: 'Build the Test Data Initializer'
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    variables:
+      PublishRuntime: linux-x64
+      PublishFolder: linux
+    steps:
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish Linux'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: DevFun.DataInitializer/DevFun.DataInitializer.sln
+        arguments: '--output $(Build.ArtifactStagingDirectory)/linux --self-contained --configuration release --runtime linux-x64'
+        zipAfterPublish: false
+        modifyOutputPath: false
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish Windows'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: DevFun.DataInitializer/DevFun.DataInitializer.sln
+        arguments: '--output $(Build.ArtifactStagingDirectory)/windows --self-contained --configuration release --runtime win10-x64'
+        zipAfterPublish: false
+        modifyOutputPath: false
+    - publish: $(Build.ArtifactStagingDirectory)
+      artifact: TestDataInitializer
+      displayName: 'Publish Artifact: TestDataInitializer'
+

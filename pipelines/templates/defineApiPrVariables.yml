@@ -1,0 +1,14 @@
+steps:
+- pwsh: |
+    $prId = [regex]::match('$(RESOURCES.PIPELINE.CIBUILD.SOURCEBRANCH)','(refs/pull/)(\d*)(/merge)').Groups[2].Value
+    Write-Host "##vso[task.setvariable variable=prId;]$prId"
+    Write-Host "##vso[task.setvariable variable=HelmReleaseName;]devfunapi-pr$($prId)"
+    Write-Host "##vso[task.setvariable variable=IngressHostName;]api.devfun.pr-$($prId).demo.4tecture.ch"
+    Write-Host "##vso[task.setvariable variable=TlsSecretName;]devfunapi-pr$($prId)-tls"
+    $dbname = "devfun-pr$($prId)"
+    Write-Host "##vso[task.setvariable variable=dbname;]$dbname"
+    Write-Host "##vso[task.setvariable variable=ConnectionString;]Server=tcp:$(dbservernamefqdn),1433;Initial Catalog=$dbname;Persist Security Info=False;User ID=$(dbuser);Password=$env:DBPASSWORD;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+    Write-Host "##vso[task.setvariable variable=k8sNamespace;]pr-$($prId)"
+  env:
+    DBPASSWORD: $(dbpassword)
+  displayName: 'Define PR related Variables'
