@@ -10,6 +10,10 @@ COPY . .
 WORKDIR "/src/DevFun.Web"
 RUN dotnet build "DevFun.Web.csproj" -c Release -o /app/build
 
+FROM build AS test
+LABEL test=true
+RUN dotnet test --results-directory /testresults --logger "trx;LogFileName=test_results.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=/testresults/coverage/ ../DevFun.Web.Unit.Tests/DevFun.Web.Unit.Tests.csproj
+
 FROM build AS publish
 RUN dotnet publish "DevFun.Web.csproj" -c Release -o /app/publish
 
