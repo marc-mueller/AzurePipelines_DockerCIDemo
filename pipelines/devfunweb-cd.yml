@@ -1,0 +1,130 @@
+name : DevFunWeb-CD
+trigger: none
+resources:
+ pipelines:
+   - pipeline: CIBuild
+     source: DevFunWeb-CI
+     trigger:
+      branches:
+       include:
+         - master
+         - feature/*
+         - pull/*
+         - refs/pull/*
+variables:
+  AzureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+  AzureContainerRegistry: 4tk8sdemoacr.azurecr.io
+  AzureResourceGroup: 'k8sDemo'
+  KubernetesCluster: 'aks2376'
+  ReplicaCount: 3
+  FlagEnableAlternateUrl: false
+  HelmReleaseName: 'devfunweb-$(k8sNamespace)'
+  ImageName: '$(AzureContainerRegistry)/devfunweb'
+  IngressHostName: 'web.devfun.$(k8sNamespace).demo.4tecture.ch'
+  ServiceUrl: 'https://api.devfun.$(k8sNamespace).demo.4tecture.ch'
+  TlsSecretName: 'devfunweb-tls'
+  HelmVersion: '3.0.0'
+  ReleaseValuesFile: '$(Pipeline.Workspace)/CIBuild/DevFunWeb/values.release.yaml'
+  ChartPackage: '$(Pipeline.Workspace)/CIBuild/DevFunWeb/devfunweb-$(RESOURCES.PIPELINE.CIBUILD.RUNNAME).tgz'
+  ReleaseRevision: $[counter(variables['RESOURCES.PIPELINE.CIBUILD.RUNNAME'], 1)]
+stages:
+- stage: InitializeRelease
+  jobs:
+  - job: InitializeRelease
+    pool:
+      name: Default
+    steps:
+      - checkout: none
+      - template: pipelines/templates/releaseInitialization.yml
+
+- stage: PR
+  dependsOn: InitializeRelease
+  condition: and(succeeded('InitializeRelease'), startsWith(variables['RESOURCES.PIPELINE.CIBUILD.SOURCEBRANCH'], 'refs/pull/')) 
+  variables:
+    k8sNamespace: 'dev'
+    CertIssuer: 'letsencrypt-cluster-staging'
+    DeploymentEnvironment: 'PR Build'
+    FlagEnableAlternateUrl: true
+    AlternateTestingUrl: https://api.devfun.staging.demo.4tecture.ch
+  jobs:
+  - deployment: PR
+    displayName: 'Deploy DevFun Web to the $(k8sNamespace) environment'
+    environment: devfun-web-pr
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: CIBuild
+            artifact: DevFunWeb
+          - template: pipelines/templates/definePrVariables.yml
+          - template: pipelines/templates/setupK8sPrEnvironment.yml
+          - template: pipelines/templates/deployHelmPackage.yml
+- stage: DeletePR
+  dependsOn: PR
+  condition: succeeded('PR')
+  variables:
+    k8sNamespace: 'dev'
+    CertIssuer: 'letsencrypt-cluster-staging'
+    DeploymentEnvironment: 'PR Build'
+  jobs:
+  - deployment: DeletePR
+    displayName: 'Delete DevFun Web from the $(k8sNamespace) environment'
+    environment: devfun-web-pr-delete
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: none
+          - template: pipelines/templates/definePrVariables.yml
+          - template: pipelines/templates/deleteK8sPrEnvironment.yml
+
+
+- stage: Staging
+  dependsOn: InitializeRelease
+  condition: and(succeeded('InitializeRelease'), startsWith(variables['RESOURCES.PIPELINE.CIBUILD.SOURCEBRANCH'], 'refs/heads/master'))
+  variables:
+    k8sNamespace: 'staging'
+    CertIssuer: 'letsencrypt-cluster'
+    DeploymentEnvironment: 'Staging'
+  jobs:
+  - deployment: Staging
+    displayName: 'Deploy DevFun Web to the $(k8sNamespace) environment'
+    environment: devfun-web-staging
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: CIBuild
+            artifact: DevFunWeb
+          - template: pipelines/templates/deployHelmPackage.yml
+
+- stage: Prod
+  dependsOn: Staging
+  condition: succeeded('Staging')
+  variables:
+    k8sNamespace: 'prod'
+    CertIssuer: 'letsencrypt-cluster'
+    DeploymentEnvironment: 'Production'
+  jobs:
+  - deployment: Prod
+    displayName: 'Deploy DevFun Web to the $(k8sNamespace) environment'
+    environment: devfun-web-prod
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: CIBuild
+            artifact: DevFunWeb
+          - template: pipelines/templates/deployHelmPackage.yml

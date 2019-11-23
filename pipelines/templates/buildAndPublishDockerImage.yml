@@ -1,0 +1,43 @@
+steps:
+- task: CopyFiles@2
+  displayName: "Copy props from repo root to docker context root"
+  inputs:
+    Contents: |
+      *.props
+      *.ruleset
+    TargetFolder: '$(BuildContext)'
+- task: Docker@1
+  displayName: 'Build an image'
+  inputs:
+    containerregistrytype: 'Azure Container Registry'
+    azureSubscriptionEndpoint: '$(AzureSubscription)'
+    azureContainerRegistry: '$(AzureContainerRegistry)'
+    command: 'Build an image'
+    dockerFile: '$(DockerFile)'
+    arguments: '--build-arg PAT=$(PatProductsFeed)'
+    imageName: '$(ImageName):$(Build.BuildNumber)'
+    useDefaultContext: false
+    buildContext: '$(BuildContext)'
+- pwsh: |
+    $id=docker images --filter "label=test=true" -q | Select-Object -First 1
+    docker create --name testcontainer $id
+    docker cp testcontainer:/testresults ./testresults
+    docker rm testcontainer
+  displayName: 'Copy test results'
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
+    searchFolder: '$(System.DefaultWorkingDirectory)/testresults'
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: 'Cobertura'
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/testresults/coverage/coverage.cobertura.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)/testresults/coverage/reports'
+- task: Docker@1
+  displayName: 'Push an image'
+  inputs:
+    azureSubscriptionEndpoint: $(AzureSubscription)
+    azureContainerRegistry: $(AzureContainerRegistry)
+    command: 'Push an image'
+    imageName: '$(ImageName):$(Build.BuildNumber)'

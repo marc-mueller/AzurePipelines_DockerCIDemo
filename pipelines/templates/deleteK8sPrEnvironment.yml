@@ -1,0 +1,30 @@
+steps:
+- task: HelmInstaller@0
+  displayName: 'Install Helm $(HelmVersion)'
+  inputs:
+    helmVersion: '$(HelmVersion)'
+    checkLatestHelmVersion: false
+    installKubectl: true
+- task: HelmDeploy@0
+  displayName: 'helm delete realease'
+  inputs:
+    connectionType: 'Azure Resource Manager'
+    azureSubscription: '$(AzureSubscription)'
+    azureResourceGroup: '$(AzureResourceGroup)'
+    kubernetesCluster: '$(KubernetesCluster)'
+    useClusterAdmin: true
+    namespace: '$(k8sNamespace)'
+    command: 'uninstall'
+    arguments: '$(HelmReleaseName)'
+- task: Kubernetes@1
+  displayName: 'kubectl delete namespace'
+  inputs:
+    connectionType: 'Azure Resource Manager'
+    azureSubscriptionEndpoint: '$(AzureSubscription)'
+    azureResourceGroup: '$(AzureResourceGroup)'
+    kubernetesCluster: '$(KubernetesCluster)'
+    useClusterAdmin: true
+    command: 'delete'
+    arguments: 'namespaces $(k8sNamespace)'
+    secretType: 'dockerRegistry'
+    containerRegistryType: 'Azure Container Registry'

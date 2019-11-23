@@ -1,0 +1,34 @@
+name : DevFunWeb-CI
+trigger:
+  branches:
+    include:
+      - master
+      - releases/*
+  paths:
+    include:
+      - DevFun.Web/*
+variables:
+  AzureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+  AzureContainerRegistry: 4tk8sdemoacr.azurecr.io
+  AzureResourceGroup: 'k8sDemo'
+  KubernetesCluster: 'aks2376'
+  ImageName: '$(AzureContainerRegistry)/devfunweb'
+  HelmVersion: '3.0.0'
+stages:
+- stage: Build
+  jobs:
+  - job: CI_Build
+    displayName: 'Build the Web'
+    pool:
+      #vmImage: 'ubuntu-latest'
+      name: Default
+    variables:
+      DockerFile: DevFun.Web/DevFun.Web/Dockerfile
+      BuildContext: DevFun.Web
+      ChartPath: DevFun.Web/DevFun.Web/charts/devfunweb
+      ArtifactSourceFolder: DevFun.Web/DevFun.Web
+      ArtifactName: DevFunWeb
+    steps:
+      - template: pipelines/templates/buildVersioning.yml
+      - template: pipelines/templates/buildAndPublishDockerImage.yml
+      - template: pipelines/templates/createHelmPackage.yml

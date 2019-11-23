@@ -1,0 +1,10 @@
+steps:
+- pwsh: |
+    $prId = [regex]::match('$(RESOURCES.PIPELINE.CIBUILD.SOURCEBRANCH)','(refs/pull/)(\d*)(/merge)').Groups[2].Value
+    Write-Host "##vso[task.setvariable variable=prId;]$prId"
+    Write-Host "##vso[task.setvariable variable=HelmReleaseName;]devfunweb-pr$($prId)"
+    Write-Host "##vso[task.setvariable variable=IngressHostName;]web.devfun.pr-$($prId).demo.4tecture.ch"
+    Write-Host "##vso[task.setvariable variable=TlsSecretName;]devfunweb-pr$($prId)-tls"
+    Write-Host "##vso[task.setvariable variable=ServiceUrl;]https://api.devfun.pr-$($prId).demo.4tecture.ch"
+    Write-Host "##vso[task.setvariable variable=k8sNamespace;]pr-$($prId)"
+  displayName: 'Define PR related Variables'

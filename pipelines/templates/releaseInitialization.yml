@@ -1,0 +1,7 @@
+steps:
+- pwsh: |
+    Get-ChildItem Env: | Format-Table -AutoSize
+  displayName: 'Show all environment variables for demo'
+- pwsh: |
+    Write-Host "##vso[build.updatebuildnumber]$(RESOURCES.PIPELINE.CIBUILD.RUNNAME)-$(ReleaseRevision)"
+  displayName: 'Set Release Build Number'

@@ -1,0 +1,32 @@
+steps:
+- task: Tokenizer@0
+  displayName: 'Tokenizer to set build number in values.release.yaml'
+  inputs:
+    sourceFilesPattern: 'values.release.yaml'
+    sourcePath: $(ArtifactSourceFolder)
+- task: CopyFiles@2
+  displayName: 'Copy Files to: $(Build.ArtifactStagingDirectory)/$(ArtifactName)'
+  inputs:
+    SourceFolder: $(ArtifactSourceFolder)
+    Contents: values.release.yaml
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(ArtifactName)'
+- task: HelmInstaller@0
+  displayName: 'Install Helm $(HelmVersion)'
+  inputs:
+    helmVersion: '$(HelmVersion)'
+    checkLatestHelmVersion: false
+    installKubectl: true
+- task: HelmDeploy@0
+  displayName: 'helm package'
+  inputs:
+    azureSubscription: $(AzureSubscription)
+    azureResourceGroup: $(AzureResourceGroup)
+    kubernetesCluster: $(KubernetesCluster)
+    command: package
+    chartPath: $(ChartPath)
+    destination: '$(Build.ArtifactStagingDirectory)/$(ArtifactName)'
+    chartVersion: '$(Build.BuildNumber)'
+    save: false
+- publish: '$(Build.ArtifactStagingDirectory)/$(ArtifactName)'
+  artifact: '$(ArtifactName)'
+  displayName: 'Publish Artifact: $(ArtifactName)'

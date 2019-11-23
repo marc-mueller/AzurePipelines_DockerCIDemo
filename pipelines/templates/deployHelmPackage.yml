@@ -1,0 +1,26 @@
+steps:
+- task: Tokenizer@0
+  displayName: Tokenizer
+  inputs:
+    sourceFilesPattern: '$(ReleaseValuesFile)'
+- task: HelmInstaller@0
+  displayName: 'Install Helm $(HelmVersion)'
+  inputs:
+    helmVersion: '$(HelmVersion)'
+    checkLatestHelmVersion: false
+    installKubectl: true
+- task: HelmDeploy@0
+  displayName: 'helm upgrade'
+  inputs:
+    connectionType: 'Azure Resource Manager'
+    azureSubscription: '$(AzureSubscription)'
+    azureResourceGroup: '$(AzureResourceGroup)'
+    kubernetesCluster: '$(KubernetesCluster)'
+    useClusterAdmin: true
+    namespace: '$(k8sNamespace)'
+    command: 'upgrade'
+    chartType: 'FilePath'
+    chartPath: '$(ChartPackage)'
+    releaseName: '$(HelmReleaseName)'
+    overrideValues: 'buildID=$(RESOURCES.PIPELINE.CIBUILD.RUNNAME)'
+    valueFile: '$(ReleaseValuesFile)'
