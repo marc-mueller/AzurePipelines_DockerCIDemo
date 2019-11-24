@@ -5,3 +5,4 @@ steps:
 - pwsh: |
     Write-Host "##vso[build.updatebuildnumber]$(RESOURCES.PIPELINE.CIBUILD.RUNNAME)-$(ReleaseRevision)"
   displayName: 'Set Release Build Number'
+  condition: ne(variables['Build.Reason'], 'ResourceTrigger')) # Workaround: Currently fails setting build number in release trigger

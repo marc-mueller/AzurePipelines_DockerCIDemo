@@ -20,8 +20,8 @@ stages:
   - job: CI_Build
     displayName: 'Build the Api'
     pool:
-      vmImage: 'ubuntu-latest'
-      #name: Default
+      #vmImage: 'ubuntu-latest'
+      name: Default
     variables:
       DockerFile: DevFun.Api/DevFun.Api/Dockerfile
       BuildContext: DevFun.Api
