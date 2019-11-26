@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.14
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29509.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevFun.Api", "DevFun.Api\DevFun.Api.csproj", "{AC5C8C18-C38E-4A7F-85F5-EFF295C56AF9}"
 EndProject
@@ -21,9 +21,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevFun.Common", "DevFun.Com
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{73160DA3-A13B-4675-88C8-24377E32BDA3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevFun.Api.System.Tests", "DevFun.Api.System.Tests\DevFun.Api.System.Tests.csproj", "{0A3ADD7B-0E7C-4EC7-87EF-B68D79F9F894}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DevFun.Api.System.Tests", "DevFun.Api.System.Tests\DevFun.Api.System.Tests.csproj", "{0A3ADD7B-0E7C-4EC7-87EF-B68D79F9F894}"
 EndProject
 Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "DevFun.DB", "DevFun.DB\DevFun.DB.sqlproj", "{76E4F23C-528E-498F-AAAB-9D3EC4B3BE10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DevFun.Deplyoment.Verification.Tests", "DevFun.Deplyoment.Verification.Tests\DevFun.Deplyoment.Verification.Tests.csproj", "{E9F4B2D9-3A98-44D2-B35A-4CFC12577664}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,6 +67,10 @@ Global
 		{76E4F23C-528E-498F-AAAB-9D3EC4B3BE10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76E4F23C-528E-498F-AAAB-9D3EC4B3BE10}.Release|Any CPU.Build.0 = Release|Any CPU
 		{76E4F23C-528E-498F-AAAB-9D3EC4B3BE10}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{E9F4B2D9-3A98-44D2-B35A-4CFC12577664}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9F4B2D9-3A98-44D2-B35A-4CFC12577664}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9F4B2D9-3A98-44D2-B35A-4CFC12577664}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9F4B2D9-3A98-44D2-B35A-4CFC12577664}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -77,6 +83,7 @@ Global
 		{825FE77D-2EC1-4C76-AE47-E85D28461746} = {D4E0EB67-7554-4E8C-8CF7-F2E8883B2548}
 		{0A3ADD7B-0E7C-4EC7-87EF-B68D79F9F894} = {E770E417-3A3E-4265-9C99-C12B540351D4}
 		{76E4F23C-528E-498F-AAAB-9D3EC4B3BE10} = {D4E0EB67-7554-4E8C-8CF7-F2E8883B2548}
+		{E9F4B2D9-3A98-44D2-B35A-4CFC12577664} = {E770E417-3A3E-4265-9C99-C12B540351D4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5F02B7F1-B4C6-43B9-B7DF-73A911791E64}

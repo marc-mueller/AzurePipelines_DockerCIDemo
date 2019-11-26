@@ -61,7 +61,7 @@ namespace DevFun.Logic.Services
             var repo = session.ResolveRepository<IDevJokeRepository>();
             var result = await repo.AddDetached(joke).ConfigureAwait(false);
             await session.SaveChanges().ConfigureAwait(false);
-            return result;
+            return await GetById(result.Id).ConfigureAwait(false);
         }
 
         public async Task<DevJoke> Update(DevJoke joke)

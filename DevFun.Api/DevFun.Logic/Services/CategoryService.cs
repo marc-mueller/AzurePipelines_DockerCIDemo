@@ -44,7 +44,7 @@ namespace DevFun.Logic.Services
             var repo = session.ResolveRepository<ICategoryRepository>();
             var result = await repo.AddDetached(category).ConfigureAwait(false);
             await session.SaveChanges().ConfigureAwait(false);
-            return result;
+            return await GetById(result.Id).ConfigureAwait(false);
         }
 
         public async Task<Category> Update(Category category)
