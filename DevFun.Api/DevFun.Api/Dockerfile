@@ -5,16 +5,17 @@ EXPOSE 80
 FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
 WORKDIR /src
 
-ARG PAT
-RUN wget -qO- https://raw.githubusercontent.com/Microsoft/artifacts-credprovider/master/helpers/installcredprovider.sh | bash
-ENV NUGET_CREDENTIALPROVIDER_SESSIONTOKENCACHE_ENABLED true
-ENV VSS_NUGET_EXTERNAL_FEED_ENDPOINTS "{\"endpointCredentials\": [{\"endpoint\":\"https://4tecture.pkgs.visualstudio.com/_packaging/Products/nuget/v3/index.json\", \"password\":\"${PAT}\"}]} "
-
 COPY ["DevFun.Api/DevFun.Api.csproj", "DevFun.Api/"]
 COPY ["DevFun.Logic/DevFun.Logic.csproj", "DevFun.Logic/"]
 COPY ["DevFun.Common/DevFun.Common.csproj", "DevFun.Common/"]
 COPY ["DevFun.Storage/DevFun.Storage.csproj", "DevFun.Storage/"]
 COPY ["DevFun.Logic.Unit.Tests/DevFun.Logic.Unit.Tests.csproj", "DevFun.Logic.Unit.Tests/"]
+
+ARG PAT
+RUN wget -qO- https://raw.githubusercontent.com/Microsoft/artifacts-credprovider/master/helpers/installcredprovider.sh | bash
+ENV NUGET_CREDENTIALPROVIDER_SESSIONTOKENCACHE_ENABLED true
+ENV VSS_NUGET_EXTERNAL_FEED_ENDPOINTS "{\"endpointCredentials\": [{\"endpoint\":\"https://4tecture.pkgs.visualstudio.com/_packaging/Products/nuget/v3/index.json\", \"password\":\"${PAT}\"}]} "
+
 RUN dotnet restore -s "https://4tecture.pkgs.visualstudio.com/_packaging/Products/nuget/v3/index.json" -s "https://api.nuget.org/v3/index.json" "DevFun.Api/DevFun.Api.csproj"
 RUN dotnet restore -s "https://4tecture.pkgs.visualstudio.com/_packaging/Products/nuget/v3/index.json" -s "https://api.nuget.org/v3/index.json" "DevFun.Logic.Unit.Tests/DevFun.Logic.Unit.Tests.csproj"
 COPY . .
