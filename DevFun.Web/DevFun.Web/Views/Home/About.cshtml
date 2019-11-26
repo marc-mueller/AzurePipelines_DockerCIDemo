@@ -8,7 +8,7 @@
         <label>Environment</label>
     </div>
     <div class="col-md-8">
-        <span>@ViewData["DeploymentEnvironment"]</span>
+        <span id="deploymentEnvironment">@ViewData["DeploymentEnvironment"]</span>
     </div>
 </div>
 <div class="row" style="font-size:20pt">
@@ -16,6 +16,6 @@
         <label>Host</label>
     </div>
     <div class="col-md-8">
-        <span>@Environment.MachineName</span>
+        <span id="machineName">@Environment.MachineName</span>
     </div>
 </div>

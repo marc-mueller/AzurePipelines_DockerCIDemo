@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Parameters used by tests at runtime -->
+  <TestRunParameters>
+    <Parameter name="baseUrl" value="http://localhost:4578/" />
+    <Parameter name="targetBrowser" value="Chrome" />
+    <!--<Parameter name="targetBrowser" value="Edge" />-->
+    <!--<Parameter name="targetBrowser" value="InternetExplorer" />-->
+    <!--<Parameter name="targetBrowser" value="Firefox" />-->
+    <!--<Parameter name="targetBrowser" value="PhantomJSDriver" />-->
+    <Parameter name="resolutionWidth" value="1280" />
+    <Parameter name="resolutionHeight" value="768" />
+  </TestRunParameters>
+</RunSettings>

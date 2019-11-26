@@ -26,6 +26,6 @@
         <small>Category: @Model?.CategoryName</small>
     </div>
     <div class="col-md-8">
-        <span>@Html.Raw(Model?.Text?.Replace("\\r\\n", "<br />"))</span>
+        <span id="jokeText">@Html.Raw(Model?.Text?.Replace("\\r\\n", "<br />"))</span>
     </div>
 </div>
