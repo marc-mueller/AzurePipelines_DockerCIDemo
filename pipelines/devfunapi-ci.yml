@@ -8,7 +8,7 @@ trigger:
     include:
       - DevFun.Api/*
 variables:
-  AzureSubscription: 'Microsoft Azure Sponsorship (82d445a5-0bf3-454a-804b-2fd0286650c2)'
+  AzureSubscription: 'Microsoft Azure Sponsorship'
   AzureContainerRegistry: 4tk8sdemoacr.azurecr.io
   AzureResourceGroup: 'k8sDemo'
   KubernetesCluster: 'aks2376'
