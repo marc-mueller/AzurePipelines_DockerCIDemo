@@ -50,7 +50,7 @@ stages:
         targetType: 'inline'
         script: |
           $uri = "https://github.com/4tecture/SSDTDataMigration/releases/download/untagged-8c8c5eae85e1f1e33b69/4tecture.CustomSSDTMigrationScripts.msi"
-          $out = "c:\4tecture.CustomSSDTMigrationScripts.msi"
+          $out = "$(Agent.TempDirectory)\4tecture.CustomSSDTMigrationScripts.msi"
           Invoke-WebRequest -uri $uri -OutFile $out
           Start-Process -FilePath "msiexec.exe" -ArgumentList "/i $out /quiet /norestart /l c:\installlog.txt" -wait
     - task: VSBuild@1
