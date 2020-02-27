@@ -14,6 +14,23 @@ variables:
   KubernetesCluster: 'aks2376'
   ImageName: '$(AzureContainerRegistry)/devfunapi'
   HelmVersion: '3.0.0'
+  dbname: 'devfunapi'
+resources:
+  containers:
+  - container: sql
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    env:
+      SA_PASSWORD: "verysecure!123"
+      ACCEPT_EULA: "Y"
+  - container: api
+    image: '$(ImageName):$(Build.BuildNumber)'
+    endpoint: 4tk8sdemoacr
+    env: 
+      devfunoptions__deploymentenvironment: "Development"
+      connectionstrings__devfundatabase: 'Server=tcp:sql,1433;Database=$(dbname);User ID=sa;Password=verysecure!123;'
+  - container: worker
+    image: 4tk8sdemoacr.azurecr.io/linuxworker:stretch
+    endpoint: 4tk8sdemoacr
 stages:
 - stage: Build
   jobs:
@@ -93,4 +110,36 @@ stages:
     - publish: $(Build.ArtifactStagingDirectory)
       artifact: TestDataInitializer
       displayName: 'Publish Artifact: TestDataInitializer'
-
+- stage: IntegrationTests
+  displayName: 'Run Integration Tests'
+  dependsOn: Build
+  jobs:
+  - job: SystemTest
+    displayName: 'System tests with SQL Server'
+    pool:
+      vmImage: 'ubuntu-latest'
+      #name: Default
+    services:
+      sql: sql
+      api: api
+    container: worker
+    steps:
+      - download: current
+        artifact: Database
+        displayName: Download the Database artifact
+      - download: current
+        artifact: TestDataInitializer
+        displayName: Download the TestDataInitializer artifact
+      - task: Bash@3
+        displayName: 'Deploy the DB schema to the database'
+        inputs:
+          targetType: 'inline'
+          script: |
+            /opt/sqlpackage/sqlpackage /a:Publish /tsn:sql /tdn:$(dbname) /tu:sa /tp:verysecure!123 /sf:$(Pipeline.Workspace)/Database/DevFun.DB.dacpac
+      - task: Bash@3
+        displayName: 'Run API calls to store entities'
+        inputs:
+          targetType: 'inline'
+          script: |
+            chmod +x $(Pipeline.Workspace)/TestDataInitializer/linux/DevFun.DataInitializer
+            $(Pipeline.Workspace)/TestDataInitializer/linux/DevFun.DataInitializer -s http://api
